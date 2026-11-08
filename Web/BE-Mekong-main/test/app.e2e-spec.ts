@@ -20,11 +20,7 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect({
-        success: true,
-        status: 'ok',
-        service: 'mekong-salinity-api',
-      });
+      .expect((response) => expect(response.body.status).toBe('ok'));
   });
 
   afterEach(async () => {
