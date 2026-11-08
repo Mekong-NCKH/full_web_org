@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/app/index.tsx","./src/helpers/handle-axios-error.ts","./src/helpers/storage.ts","./src/stores/auth.store.ts","./src/stores/global-loading.store.ts","./src/stores/index.ts","./src/utils/custom-axios.ts","./src/utils/logger.ts","./src/utils/time.ts"],"errors":true,"version":"5.7.3"}

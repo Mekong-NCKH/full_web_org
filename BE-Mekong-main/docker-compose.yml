@@ -1,0 +1,19 @@
+services:
+  thuyvan-db:
+    image: postgres:17
+    container_name: thuyvan-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: thuyvan_db
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mount thư mục init.sql vào đúng nơi Postgres yêu cầu để chạy tự động
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+      # Lưu trữ dữ liệu vật lý để khi xóa container không bị mất data
+      - thuyvan-db-data:/var/lib/postgresql/data
+
+volumes:
+  thuyvan-db-data:

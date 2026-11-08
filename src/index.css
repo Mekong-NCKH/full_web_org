@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.pagination-btn {
+  @apply p-1 rounded transition-colors bg-white text-[#0329E9] hover:bg-blue-600 hover:text-white;
+}
+.pagination-btn-disabled {
+  @apply p-1 rounded bg-white text-gray-300 opacity-30 cursor-not-allowed;
+}
+.page-number {
+  @apply size-8 inline-flex items-center justify-center text-sm font-medium rounded-full transition-colors bg-white text-[#0329E9] hover:bg-blue-600 hover:text-white hover:shadow;
+}
+.page-number-active {
+  @apply size-8 inline-flex items-center justify-center text-sm font-medium rounded-full transition-colors bg-blue-600 text-white shadow-lg;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* hide scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Use Baloo Chettan 2 for headings by default */
+span{
+  font-family: 'Baloo Chettan 2', 'Archivo', system-ui, -apple-system,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Utility class to force Baloo font where needed */
+.font-baloo {
+  font-family: 'Baloo Chettan 2', 'Archivo', system-ui, -apple-system,
+    'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+@font-face {
+  font-family: 'SVN Arial';
+  /* filename may include a space: use the exact filename present in assets/fonts */
+  src: local('SVN Arial'), url('./assets/fonts/SVN-Arial Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'UTM Black';
+  src: local('UTM Black'), url('./assets/fonts/UTM-Black.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham Medium';
+  src: local('Gotham Medium'), url('./assets/fonts/Gotham-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham Thin';
+  src: local('Gotham Thin'), url('./assets/fonts/Gotham-Thin.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Gotham Ultra';
+  src: local('Gotham Ultra'), url('./assets/fonts/Gotham-Ultra.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* SVN Arial 2 family and variants (regular, bold, italic, bold italic) */
+@font-face {
+  font-family: 'SVN Arial 2';
+  src: local('SVN Arial 2'), url('./assets/fonts/SVN-Arial 2.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SVN Arial 2 Bold';
+  src: local('SVN Arial 2 Bold'), url('./assets/fonts/SVN-Arial 2 bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SVN Arial 2 Italic';
+  src: local('SVN Arial 2 Italic'), url('./assets/fonts/SVN-Arial 2 italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SVN Arial 2 Bold Italic';
+  src: local('SVN Arial 2 Bold Italic'), url('./assets/fonts/SVN-Arial 2 bold italic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root{
+  --font-sans: 'SVN Arial', 'SVN Arial 2', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --font-display: 'UTM Black', 'Gotham Medium', 'Gotham Thin', 'Gotham Ultra', var(--font-sans);
+}
+
+/* Apply base font families and smoothing */
+html, body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+[class^='icon-'],
+[class*=' icon-'] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+body {
+  margin: 0;
+  font-family: 'Archivo', 'Baloo Chettan 2', BlinkMacSystemFont, 'Segoe UI',
+    'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans',
+    'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #3d4863;
+
+  /* Hide scrollbar for IE, Edge, and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
+
+/* Utility classes for explicit font uses (optional but handy)
+   Usage: add `font-utm-black` to elements that must use UTM Black */
+.font-utm-black{ font-family: 'UTM Black', var(--font-sans); }
+.font-gotham-medium{ font-family: 'Gotham Medium', var(--font-sans); }
+.font-gotham-thin{ font-family: 'Gotham Thin', var(--font-sans); }
+.font-gotham-ultra{ font-family: 'Gotham Ultra', var(--font-sans); }
+.font-svn-2{ font-family: 'SVN Arial 2', var(--font-sans); }
+.font-svn{ font-family: 'SVN Arial', var(--font-sans); }
+
+.line-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "email": "student@gmail.com", 
+    "password": "student123",
+    "role": "student"
+  },
+  {
+    "email": "tutor@gmail.com",
+    "password": "tutor123",
+    "role": "tutor"
+  },
+  {
+    "email": "coordinator@gmail.com",
+    "password": "coordinator123",
+    "role": "coordinator"
+  },
+  {
+    "email": "chairman@gmail.com",
+    "password": "chairman123",
+    "role": "chairman"
+  }
+]

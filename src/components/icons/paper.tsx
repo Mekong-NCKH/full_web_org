@@ -1,0 +1,16 @@
+import type { SVGProps } from 'react';
+
+export default function PaperIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 17 17"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path d="M1.66667 3.33333H0V15C0 15.9167 0.75 16.6667 1.66667 16.6667H13.3333V15H1.66667V3.33333ZM15 0H5C4.08333 0 3.33333 0.75 3.33333 1.66667V11.6667C3.33333 12.5833 4.08333 13.3333 5 13.3333H15C15.9167 13.3333 16.6667 12.5833 16.6667 11.6667V1.66667C16.6667 0.75 15.9167 0 15 0ZM14.1667 7.5H5.83333V5.83333H14.1667V7.5ZM10.8333 10.8333H5.83333V9.16667H10.8333V10.8333ZM14.1667 4.16667H5.83333V2.5H14.1667V4.16667Z" fill="#3D4863" />
+    </svg>
+  );
+}

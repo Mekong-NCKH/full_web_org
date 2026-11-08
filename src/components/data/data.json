@@ -1,0 +1,197 @@
+[
+	{
+		"location": "Rạch Bùn",
+		"date": "2020-01-01",
+		"time": "04:20",
+		"cd": "Đ",
+		"m_song_m": 1.08,
+		"m_dong_m": 0.41,
+		"sal_song_gpl": 21.70,
+		"sal_dong_gpl": 11.00,
+		"notes": "Original table row"
+	},
+	{
+		"location": "Rạch Bùn",
+		"date": "2020-01-01",
+		"time": "06:20",
+		"cd": null,
+		"m_song_m": null,
+		"m_dong_m": 0.48,
+		"sal_song_gpl": 22.10,
+		"sal_dong_gpl": null,
+		"notes": "Values aligned from provided table; missing values set to null"
+	},
+	{
+		"location": "Rạch Bùn",
+		"date": "2020-01-01",
+		"time": "11:40",
+		"cd": "C",
+		"m_song_m": -1.36,
+		"m_dong_m": -0.51,
+		"sal_song_gpl": 17.50,
+		"sal_dong_gpl": 11.00,
+		"notes": "Original table row"
+	},
+	{
+		"location": "Rạch Bùn",
+		"date": "2020-01-01",
+		"time": "19:10",
+		"cd": "Đ",
+		"m_song_m": 1.25,
+		"m_dong_m": 0.29,
+		"sal_song_gpl": 21.00,
+		"sal_dong_gpl": 11.00,
+		"notes": "Original table row"
+	},
+	{
+		"location": "Rạch Bùn",
+		"date": "2020-01-01",
+		"time": "21:10",
+		"cd": null,
+		"m_song_m": null,
+		"m_dong_m": null,
+		"sal_song_gpl": 21.40,
+		"sal_dong_gpl": null,
+		"notes": "Only one salinity value provided in the source row"
+	}
+	,
+	{
+		"location": "Cống Gò Công",
+		"date": "2020-01-01",
+		"time": "00:40",
+		"cd": "C",
+		"m_song_m": 0.18,
+		"m_dong_m": 0.39,
+		"sal_song_gpl": 4.61,
+		"sal_dong_gpl": 0.00,
+		"notes": "Cống Gò Công row"
+	},
+	{
+		"location": "Cống Gò Công",
+		"date": "2020-01-01",
+		"time": "05:10",
+		"cd": "Đ",
+		"m_song_m": 0.97,
+		"m_dong_m": 0.41,
+		"sal_song_gpl": 4.93,
+		"sal_dong_gpl": 0.00,
+		"notes": "Cống Gò Công row"
+	},
+	{
+		"location": "Cống Gò Công",
+		"date": "2020-01-01",
+		"time": "07:00",
+		"cd": null,
+		"m_song_m": null,
+		"m_dong_m": 0.41,
+		"sal_song_gpl": null,
+		"sal_dong_gpl": null,
+		"notes": "Only m_dong provided in source row"
+	},
+	{
+		"location": "Cống Gò Công",
+		"date": "2020-01-01",
+		"time": "14:40",
+		"cd": "C",
+		"m_song_m": -1.10,
+		"m_dong_m": 0.36,
+		"sal_song_gpl": 3.80,
+		"sal_dong_gpl": 0.00,
+		"notes": "Cống Gò Công row"
+	},
+	{
+		"location": "Cống Gò Công",
+		"date": "2020-01-01",
+		"time": "20:15",
+		"cd": "DĐ",
+		"m_song_m": 1.25,
+		"m_dong_m": 0.37,
+		"sal_song_gpl": 4.80,
+		"sal_dong_gpl": 0.00,
+		"notes": "Cống Gò Công row"
+	},
+	{
+		"location": "Cống Gò Công",
+		"date": "2020-01-01",
+		"time": "22:15",
+		"cd": null,
+		"m_song_m": null,
+		"m_dong_m": null,
+		"sal_song_gpl": 4.86,
+		"sal_dong_gpl": null,
+		"notes": "Only one salinity value provided in the source row"
+	}
+		,
+		{
+			"location": "Vàm Kênh",
+			"date": "2020-01-01",
+			"time": "04:30",
+			"sal_surface_gpl": 16.20,
+			"sal_bottom_gpl": 17.50,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Vàm Kênh",
+			"date": "2020-01-01",
+			"time": "06:30",
+			"sal_surface_gpl": 17.60,
+			"sal_bottom_gpl": 19.00,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Vàm Kênh",
+			"date": "2020-01-01",
+			"time": "07:00",
+			"sal_surface_gpl": 13.80,
+			"sal_bottom_gpl": 14.40,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Vàm Kênh",
+			"date": "2020-01-01",
+			"time": "19:10",
+			"sal_surface_gpl": 15.00,
+			"sal_bottom_gpl": 16.20,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Vàm Kênh",
+			"date": "2020-01-01",
+			"time": "21:10",
+			"sal_surface_gpl": 16.30,
+			"sal_bottom_gpl": 17.50,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Long Hải",
+			"date": "2020-01-01",
+			"time": "05:00",
+			"sal_surface_gpl": 7.20,
+			"sal_bottom_gpl": 8.00,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Long Hải",
+			"date": "2020-01-01",
+			"time": "07:00",
+			"sal_surface_gpl": 7.40,
+			"sal_bottom_gpl": 8.20,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Long Hải",
+			"date": "2020-01-01",
+			"time": "20:00",
+			"sal_surface_gpl": 10.30,
+			"sal_bottom_gpl": 11.40,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		},
+		{
+			"location": "Long Hải",
+			"date": "2020-01-01",
+			"time": "22:00",
+			"sal_surface_gpl": 11.00,
+			"sal_bottom_gpl": 12.00,
+			"notes": "Source values are salinity (g/l) - originally labeled depth, converted to sal_surface_gpl/sal_bottom_gpl"
+		}
+	]

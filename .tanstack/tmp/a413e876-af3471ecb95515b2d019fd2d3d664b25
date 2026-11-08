@@ -1,0 +1,150 @@
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+
+import ArrowLeft from '@/components/icons/arrow-left';
+import StudyLayout from '@/components/study-layout';
+import { mockCourses } from '@/data/~mockCourses';
+
+export const Route = createFileRoute('/_private/course/$id/')({
+  component: CourseDetailsComponent,
+});
+
+function CourseDetailsComponent() {
+  const { courseId } = Route.useParams();
+  const navigate = useNavigate();
+  const course = mockCourses.find((c) => c.id === courseId);
+
+  if (!course) {
+    return (
+      <StudyLayout>
+        <div className="flex flex-col items-center justify-center py-20">
+          <h1 className="mb-4 text-3xl font-bold text-gray-800">
+            Không tìm thấy khóa học
+          </h1>
+          <p className="mb-8 text-gray-600">
+            Khóa học với ID "{courseId}" không tồn tại.
+          </p>
+          <button
+            onClick={() => navigate({ to: '/dashboard' })}
+            className="rounded-lg bg-blue-600 px-6 py-3 text-white transition hover:bg-blue-700"
+          >
+            Quay lại Dashboard
+          </button>
+        </div>
+      </StudyLayout>
+    );
+  }
+
+  return (
+    <StudyLayout>
+      <div style={{ fontFamily: 'Archivo' }}>
+        {/* Back button */}
+        <button
+          onClick={() => navigate({ to: '/dashboard' })}
+          className="mb-6 flex items-center gap-2 text-blue-600 transition hover:text-blue-700"
+        >
+          <ArrowLeft className="size-5" />
+          <span className="font-medium">Quay lại Dashboard</span>
+        </button>
+
+        {/* Course header with background */}
+        <div
+          className="relative mb-8 rounded-lg p-8 text-white shadow-lg"
+          style={{
+            backgroundImage: `url(${course.bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            minHeight: '250px',
+          }}
+        >
+          <div className="relative z-10">
+            <p className="mb-2 text-sm font-medium text-gray-200">
+              {course.code}
+            </p>
+            <h1 className="mb-3 text-4xl font-bold">{course.title}</h1>
+            <p className="text-lg text-gray-100">
+              Giảng viên: {course.instructor}
+            </p>
+          </div>
+        </div>
+
+        {/* Course statistics */}
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-2 text-3xl font-bold text-blue-600">
+              {course.stats.documents}
+            </div>
+            <div className="text-sm font-medium text-gray-600">
+              Tài liệu học tập
+            </div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-2 text-3xl font-bold text-green-600">
+              {course.stats.links}
+            </div>
+            <div className="text-sm font-medium text-gray-600">
+              Đường dẫn tham khảo
+            </div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="mb-2 text-3xl font-bold text-orange-600">
+              {course.stats.assignments}
+            </div>
+            <div className="text-sm font-medium text-gray-600">
+              Bài tập được giao
+            </div>
+          </div>
+        </div>
+
+        {/* Course content sections */}
+        <div className="space-y-6">
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-2xl font-bold text-gray-800">
+              Thông tin khóa học
+            </h2>
+            <div className="space-y-3 text-gray-600">
+              <p>
+                <span className="font-semibold">Mã khóa học:</span>{" "}
+                {course.code}
+              </p>
+              <p>
+                <span className="font-semibold">Tên khóa học:</span>{" "}
+                {course.title}
+              </p>
+              <p>
+                <span className="font-semibold">Giảng viên:</span>{" "}
+                {course.instructor}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-2xl font-bold text-gray-800">
+              Mô tả khóa học
+            </h2>
+            <p className="text-gray-600">
+              Đây là khóa học {course.title}. Khóa học cung cấp kiến thức nền
+              tảng và thực hành về lĩnh vực này. Sinh viên sẽ được học tập qua
+              các tài liệu, bài giảng và bài tập thực hành.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-2xl font-bold text-gray-800">
+              Tài liệu học tập
+            </h2>
+            <div className="text-gray-600">
+              <p className="mb-2">
+                Có <span className="font-semibold">{course.stats.documents}</span> tài liệu
+                có sẵn trong khóa học này.
+              </p>
+              <p className="text-sm text-gray-500">
+                Tài liệu sẽ được cập nhật trong các phiên bản tương lai.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </StudyLayout>
+  );
+}
+
