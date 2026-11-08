@@ -3,28 +3,32 @@ const path = require('node:path');
 const { Client } = require('pg');
 
 const rootDir = path.resolve(__dirname, '..');
-const IMPORT_LIMIT = Number(process.env.IMPORT_LIMIT || 100);
+const sourcePath = path.join(rootDir, 'BaoDinh.csv');
+const demoStart = '2024-06-01 00:00:00';
+const demoEnd = '2024-07-31 23:00:00';
+const hoursPerStation = 1464;
+const salinityToMgL = 1000;
+const confirmation = 'rebuild-public-demo-2024-06-07';
 
-loadEnv(path.join(rootDir, '.env'));
-
-const files = [
-  path.join(rootDir, 'BaoDinh.csv'),
-  path.join(rootDir, 'GoCong.csv'),
-];
-
-const stationMetadata = {
-  baodinh: { name: 'Bảo Định', latitude: 10.388921, longitude: 106.341713, distanceKm: 0, type: 'TRẠM ĐO' },
-  cong3st: { name: 'Cống 3 Tháng 2', latitude: 10.353, longitude: 106.352, distanceKm: 4, type: 'CỐNG' },
-  giathuan: { name: 'Gia Thuận', latitude: 10.316, longitude: 106.742, distanceKm: 34, type: 'CỐNG' },
-  gocat: { name: 'Gò Cát', latitude: 10.364613, longitude: 106.370195, distanceKm: 21, type: 'TRẠM ĐO' },
-  longhai: { name: 'Long Hải', latitude: 10.346, longitude: 106.671, distanceKm: 28, type: 'CỐNG' },
-  longuong: { name: 'Long Uông', latitude: 10.394, longitude: 106.565, distanceKm: 18, type: 'TRẠM ĐO' },
-  rachbang: { name: 'Rạch Bằng', latitude: 10.342, longitude: 106.569, distanceKm: 17, type: 'CỐNG' },
-  rachbun: { name: 'Rạch Bùn', latitude: 10.360234, longitude: 106.775915, distanceKm: 23, type: 'TRẠM ĐO' },
-  tanthuanbinh: { name: 'Tân Thuận Bình', latitude: 10.405, longitude: 106.463, distanceKm: 11, type: 'TRẠM ĐO' },
-  vamgiong: { name: 'Vàm Giồng', latitude: 10.302144, longitude: 106.54872, distanceKm: 31, type: 'TRẠM ĐO' },
-  vamkenh: { name: 'Vàm Kênh', latitude: 10.283028, longitude: 106.738487, distanceKm: 37, type: 'TRẠM ĐO' },
-  xuanhoa: { name: 'Xuân Hòa', latitude: 10.336562, longitude: 106.410293, distanceKm: 22, type: 'TRẠM ĐO' },
+const publicStations = {
+  baodinh: {
+    name: 'Bao Dinh',
+    latitude: 10.388921,
+    longitude: 106.341713,
+    source: 'Sanility_GIS_Monitoring/cong_locations.csv',
+  },
+  gocat: {
+    name: 'Go Cat',
+    latitude: 10.364613,
+    longitude: 106.370195,
+    source: 'Sanility_GIS_Monitoring/cong_locations.csv',
+  },
+  vamkenh: {
+    name: 'Vam Kenh',
+    latitude: 10.283028,
+    longitude: 106.738487,
+    source: 'Sanility_GIS_Monitoring/cong_locations.csv',
+  },
 };
 
 function loadEnv(envPath) {
@@ -47,16 +51,6 @@ function loadEnv(envPath) {
     }
     if (!process.env[key]) process.env[key] = value;
   }
-}
-
-function parseCsv(content) {
-  const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/).filter(Boolean);
-  const headers = splitCsvLine(lines[0]).map((header) => header.replace(/^\uFEFF/, '').trim());
-
-  return lines.slice(1).map((line) => {
-    const values = splitCsvLine(line);
-    return Object.fromEntries(headers.map((header, index) => [header, values[index] ?? '']));
-  });
 }
 
 function splitCsvLine(line) {
@@ -85,94 +79,143 @@ function splitCsvLine(line) {
   return result;
 }
 
-function parseDateTime(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(value.trim());
-  if (!match) throw new Error(`Invalid CSV datetime: ${value}`);
+function parseCsv(content) {
+  const lines = content.replace(/^\uFEFF/, '').split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) throw new Error('BaoDinh.csv is empty or has no data rows.');
+
+  const headers = splitCsvLine(lines[0]).map(header => header.trim());
+  return lines.slice(1).map((line, index) => {
+    const values = splitCsvLine(line);
+    if (values.length !== headers.length) {
+      throw new Error(`CSV row ${index + 2} has ${values.length} values; expected ${headers.length}.`);
+    }
+    return Object.fromEntries(headers.map((header, column) => [header, values[column] ?? '']));
+  });
+}
+
+function parseSourceValue(rawValue, label) {
+  const value = rawValue.trim();
+  if (!value) return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) throw new Error(`Invalid numeric value for ${label}: ${value}`);
+  return parsed;
+}
+
+function sourceDateToTimestamp(dateValue) {
+  const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(dateValue.trim());
+  if (!match) throw new Error(`Invalid CSV date: ${dateValue}`);
 
   const [, year, month, day, hour, minute, second] = match;
-  return `${year}-${month}-${day}T${hour}:${minute}:${second}+07:00`;
+  const localDate = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+07:00`);
+  if (Number.isNaN(localDate.getTime())) throw new Error(`Invalid CSV date: ${dateValue}`);
+  return localDate.toISOString();
 }
 
-function parseNumber(value) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
+function buildDemoDataset() {
+  if (!fs.existsSync(sourcePath)) throw new Error(`Selected source file is missing: ${sourcePath}`);
+  const rows = parseCsv(fs.readFileSync(sourcePath, 'utf8'));
+  const requiredHeaders = ['Date', ...Object.keys(publicStations).flatMap(id => [`S${id}`, `Z${id}`])];
+  const headers = new Set(Object.keys(rows[0]));
+  const missing = requiredHeaders.filter(header => !headers.has(header));
+  if (missing.length) throw new Error(`BaoDinh.csv is missing required columns: ${missing.join(', ')}`);
 
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-}
+  const selectedRows = rows.filter(row => row.Date >= demoStart && row.Date <= demoEnd);
+  if (selectedRows.length !== hoursPerStation) {
+    throw new Error(`Expected ${hoursPerStation} hourly demo rows; found ${selectedRows.length}.`);
+  }
 
-function stationIdFromHeader(header) {
-  return header.slice(1).toLowerCase();
-}
+  const seenTimes = new Set();
+  const observations = [];
+  const valueSummary = Object.fromEntries(Object.keys(publicStations).map(id => [id, { count: 0, minMgL: Infinity, maxMgL: -Infinity }]));
 
-function buildObservations() {
-  const observations = new Map();
-  const stationIds = new Set();
+  for (const row of selectedRows) {
+    const timestamp = sourceDateToTimestamp(row.Date);
+    if (seenTimes.has(timestamp)) throw new Error(`Duplicate demo timestamp: ${row.Date}`);
+    seenTimes.add(timestamp);
 
-  for (const file of files) {
-    const rows = parseCsv(fs.readFileSync(file, 'utf8'));
+    for (const stationId of Object.keys(publicStations)) {
+      const sourceSalinityGPerL = parseSourceValue(row[`S${stationId}`], `S${stationId} at ${row.Date}`);
+      const waterLevelMeters = parseSourceValue(row[`Z${stationId}`], `Z${stationId} at ${row.Date}`);
+      const salinityMgL = sourceSalinityGPerL === null ? null : sourceSalinityGPerL * salinityToMgL;
+      const summary = valueSummary[stationId];
 
-    for (const row of rows) {
-      const datetime = parseDateTime(row.Date);
-
-      for (const [header, rawValue] of Object.entries(row)) {
-        if (header === 'Date') continue;
-        if (!/^[ZS]/.test(header)) continue;
-
-        const stationId = stationIdFromHeader(header);
-        const value = parseNumber(rawValue);
-        const key = `${stationId}|${datetime}`;
-        const observation = observations.get(key) ?? {
-          id: `${stationId}-${datetime.slice(0, 19).replace(/\D/g, '')}`,
-          stationId,
-          datetime,
-          salinity: null,
-          waterLevel: null,
-        };
-
-        if (header.startsWith('S')) observation.salinity = value;
-        if (header.startsWith('Z')) observation.waterLevel = value;
-
-        observations.set(key, observation);
-        stationIds.add(stationId);
-
-        if (observations.size >= IMPORT_LIMIT) {
-          return {
-            observations: [...observations.values()],
-            stationIds: [...stationIds].sort(),
-          };
-        }
+      if (salinityMgL !== null) {
+        summary.count += 1;
+        summary.minMgL = Math.min(summary.minMgL, salinityMgL);
+        summary.maxMgL = Math.max(summary.maxMgL, salinityMgL);
       }
+
+      observations.push({
+        id: `${stationId}-${timestamp.replace(/\D/g, '').slice(0, 12)}`,
+        stationId,
+        datetime: timestamp,
+        salinity: salinityMgL,
+        waterLevel: waterLevelMeters,
+      });
     }
   }
 
-  return {
-    observations: [...observations.values()],
-    stationIds: [...stationIds].sort(),
-  };
+  if (seenTimes.size !== hoursPerStation) throw new Error('Demo timestamps are incomplete.');
+  for (const [stationId, summary] of Object.entries(valueSummary)) {
+    if (summary.count !== hoursPerStation) {
+      throw new Error(`${stationId} has ${summary.count} salinity values; expected ${hoursPerStation}.`);
+    }
+  }
+
+  return { observations, valueSummary };
 }
 
-async function main() {
-  const hasDatabaseUrl = Boolean(process.env.DATABASE_URL);
-  const client = hasDatabaseUrl
-    ? new Client({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
-      })
-    : new Client({
-        host: process.env.DB_HOST || 'localhost',
-        port: Number(process.env.DB_PORT || 5432),
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-      });
+function createInsertValues(rows, columns) {
+  const values = [];
+  const tuples = rows.map((row, rowIndex) => {
+    const placeholders = columns.map((_, columnIndex) => {
+      values.push(row[columnIndex]);
+      return `$${rowIndex * columns.length + columnIndex + 1}`;
+    });
+    return `(${placeholders.join(', ')})`;
+  });
+  return { tuples: tuples.join(', '), values };
+}
 
-  const { observations, stationIds } = buildObservations();
+async function insertObservations(client, observations) {
+  const batchSize = 1000;
+  for (let offset = 0; offset < observations.length; offset += batchSize) {
+    const batch = observations.slice(offset, offset + batchSize).map(row => [
+      row.id,
+      row.stationId,
+      row.datetime,
+      row.salinity,
+      row.waterLevel,
+    ]);
+    const { tuples, values } = createInsertValues(batch, ['id', 'station_id', 'datetime', 'salinity', 'water_level']);
+    await client.query(
+      `INSERT INTO position_data (id, station_id, datetime, salinity, water_level) VALUES ${tuples}`,
+      values,
+    );
+  }
+}
+
+async function rebuildDatabase(dataset) {
+  if (process.env.DEMO_DATA_REBUILD_CONFIRM !== confirmation) {
+    throw new Error(`Set DEMO_DATA_REBUILD_CONFIRM=${confirmation} to authorize replacing the two monitoring tables.`);
+  }
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required; it was not printed or written by this script.');
+
+  const target = new URL(process.env.DATABASE_URL);
+  const databaseName = decodeURIComponent(target.pathname.replace(/^\//, ''));
+  if (databaseName !== 'neondb' || !target.hostname.endsWith('.neon.tech')) {
+    throw new Error('The rebuild is restricted to the configured Neon database named neondb.');
+  }
+
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+    application_name: 'full_web_org_demo_rebuild',
+  });
 
   await client.connect();
-  await client.query('BEGIN');
-
   try {
+    await client.query('BEGIN');
     await client.query(`
       CREATE TABLE IF NOT EXISTS positions (
         id VARCHAR(50) PRIMARY KEY,
@@ -183,7 +226,6 @@ async function main() {
         type VARCHAR(100)
       )
     `);
-
     await client.query(`
       CREATE TABLE IF NOT EXISTS position_data (
         id VARCHAR(50) PRIMARY KEY,
@@ -193,50 +235,20 @@ async function main() {
         water_level DOUBLE PRECISION
       )
     `);
+    await client.query("COMMENT ON COLUMN position_data.salinity IS 'Normalized value in mg/L; source S columns in BaoDinh.csv are g/L and are multiplied by 1000.'");
+    await client.query("COMMENT ON COLUMN position_data.water_level IS 'Value in meters relative to the source sea-level reference.'");
 
-    for (const stationId of stationIds) {
-      const metadata = stationMetadata[stationId] ?? {
-        name: stationId,
-        latitude: 10.35,
-        longitude: 106.55,
-        distanceKm: null,
-        type: 'TRẠM ĐO',
-      };
-
+    // Replace only the application monitoring tables; unrelated Neon tables are untouched.
+    await client.query('TRUNCATE TABLE position_data, positions');
+    for (const [stationId, station] of Object.entries(publicStations)) {
       await client.query(
         `INSERT INTO positions (id, name, latitude, longitude, distance_km, type)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (id) DO UPDATE SET
-           name = EXCLUDED.name,
-           latitude = EXCLUDED.latitude,
-           longitude = EXCLUDED.longitude,
-           distance_km = EXCLUDED.distance_km,
-           type = EXCLUDED.type`,
-        [stationId, metadata.name, metadata.latitude, metadata.longitude, metadata.distanceKm, metadata.type],
+         VALUES ($1, $2, $3, $4, NULL, 'monitoring')`,
+        [stationId, station.name, station.latitude, station.longitude],
       );
     }
-
-    for (const observation of observations) {
-      await client.query(
-        `INSERT INTO position_data (id, station_id, datetime, salinity, water_level)
-         VALUES ($1, $2, $3::timestamptz, $4, $5)
-         ON CONFLICT (id) DO UPDATE SET
-           station_id = EXCLUDED.station_id,
-           datetime = EXCLUDED.datetime,
-           salinity = EXCLUDED.salinity,
-           water_level = EXCLUDED.water_level`,
-        [
-          observation.id,
-          observation.stationId,
-          observation.datetime,
-          observation.salinity,
-          observation.waterLevel,
-        ],
-      );
-    }
-
+    await insertObservations(client, dataset.observations);
     await client.query('COMMIT');
-    console.log(`Imported ${stationIds.length} stations and ${observations.length} observations.`);
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -245,7 +257,40 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error);
+async function main() {
+  loadEnv(path.join(rootDir, '.env.local'));
+  loadEnv(path.join(rootDir, '.env'));
+  const dataset = buildDemoDataset();
+  const mode = process.argv.includes('--apply') ? 'apply' : 'dry-run';
+  const result = {
+    mode,
+    source: 'BaoDinh.csv',
+    sourceSalinityUnit: 'g/L',
+    outputSalinityUnit: 'mg/L',
+    conversion: 'source value × 1000',
+    waterLevelUnit: 'm',
+    windowLocalTime: { from: demoStart, to: demoEnd, offset: '+07:00' },
+    stations: Object.keys(publicStations),
+    hourlyRowsPerStation: hoursPerStation,
+    observationsToWrite: dataset.observations.length,
+    salinityRangeMgL: dataset.valueSummary,
+  };
+
+  if (mode === 'dry-run') {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    process.stdout.write('No database connection was opened and no rows were changed. Use --apply with the explicit confirmation variable to replace only positions and position_data.\n');
+    return;
+  }
+
+  await rebuildDatabase(dataset);
+  process.stdout.write(`${JSON.stringify({ ...result, mode: 'applied' }, null, 2)}\n`);
+}
+
+main().catch(error => {
+  const aggregateDetails = error instanceof AggregateError
+    ? error.errors.map(item => item?.code || item?.message).filter(Boolean).join(', ')
+    : '';
+  const message = error?.message || error?.code || aggregateDetails || 'Unknown error';
+  process.stderr.write(`${message}\n`);
   process.exitCode = 1;
 });

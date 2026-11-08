@@ -111,24 +111,27 @@ See [`PI-STOF-Estuarine-Salinity-main/README.md`](PI-STOF-Estuarine-Salinity-mai
 
 The repository provides an environment-driven NestJS configuration. In a **local development environment**, use the directory below:
 
-```bash
+```powershell
 cd Web/BE-Mekong-main
 npm ci
+Copy-Item .env.example .env
+# Set a private DB_PASSWORD in .env before starting the local database.
 docker compose up -d thuyvan-db
 npm run start:dev
 ```
 
 The NestJS entry point uses port **3001** by default (`PORT` can override it). The server config reads `DATABASE_URL`, or the alternative `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, plus `DB_SSL`. `docker-compose.yml` declares PostgreSQL 17 on port 5432 and an initialization SQL mount at `docker/postgres/init/`.
 
-**Security warning:** the archived Docker Compose file embeds a development-only password. **Change all credentials before starting a network-accessible instance**, prefer external environment variables/secrets, restrict database network exposure, and review seed files before public release. The documentation intentionally does not reproduce or recommend using the embedded password. ORM synchronization is disabled (`synchronize: false`); initial schema setup relies on the repository's SQL initialization and the database bootstrap implementation.
+The Docker Compose database binds only to loopback and requires a private local `DB_PASSWORD` in the ignored `.env` file. ORM synchronization is disabled (`synchronize: false`); new databases use the checked-in SQL initialization. Application startup does not run the legacy CSV bootstrap.
 
 The application source declares the following HTTP routes; route-level responses and parameters should be checked in `src/presentation/controllers/`:
 
 - `GET /` (health controller)
-- `GET /positions`
-- `GET /date-range/:date/:startTime/:endTime/:positionId`
+- `GET /api/data/positions`
+- `GET /api/data/date-range/:date/:startTime/:endTime/:positionId`
+- `GET /api/v1/status`, `/api/v1/stations`, `/api/v1/observations/snapshot`, `/api/v1/stations/:id/observations`, `/api/v1/metadata/data-range`, and reserved forecast/imputation routes (see [API contract](Web/BE-Mekong-main/docs/monitoring-api-v1.md))
 
-`npm run import:csv` is declared for the import script; inspect the script and its expected input data before running it, especially on any non-test database.
+The Phase 1 demo importer is intentionally separate from app startup. Run `npm run data:demo:check` for a dry run. `npm run data:demo:rebuild` replaces only the monitoring tables and requires the documented explicit confirmation. It loads BaoDinh.csv for June-July 2024, publishes only the three coordinate-confirmed stations, converts source salinity from g/L to mg/L, and keeps water level in meters. See the [API contract](Web/BE-Mekong-main/docs/monitoring-api-v1.md) before applying it.
 
 ### 3. Web frontend
 
@@ -138,7 +141,7 @@ npm ci
 npm run dev
 ```
 
-`npm run build`, `npm run preview`, and `npm run check-types` are declared in `package.json`. Frontend runtime environment variables and Firebase/deployment configuration are project-specific; verify them from the local source/configuration and supply valid values privately. A successful Vite development server alone does not prove the backend and map features are completely connected.
+`npm run build`, `npm run preview`, and `npm run check-types` are declared in `package.json`. The frontend reads `VITE_API_BASE_URL`; leave it empty locally to use the Vite `/api/v1` proxy, and set it to the backend's production origin in Vercel. See [deployment and GitHub CI setup](DEPLOYMENT.md) for the frontend/backend project roots, required CI checks, secrets, variables, and smoke tests. A successful Vite development server alone does not prove that the production backend is connected.
 
 ### 4. GIS prototype
 

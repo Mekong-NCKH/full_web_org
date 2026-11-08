@@ -1,8 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { IPositionRepository } from '../../domain/repositories/position.repository.interface';
-import { Position, PositionData } from '../../domain/entities/position.entity';
+import {
+  DataRange,
+  Position,
+  PositionData,
+  StationSnapshot,
+} from '../../domain/entities/position.entity';
+import { parseLegacyDateTime } from '../../presentation/date-validation';
 import { PositionOrmEntity } from '../database/entities/position.orm-entity';
 import { PositionDataOrmEntity } from '../database/entities/position-data.orm-entity';
 
@@ -15,18 +21,97 @@ export class TypeOrmPositionRepository implements IPositionRepository {
     private readonly dataRepo: Repository<PositionDataOrmEntity>,
   ) {}
 
-  async getPositions(): Promise<Position[]> {
-    const ormPositions = await this.positionRepo.find();
-    
-    // Map ORM Entity sang Domain Entity
-    return ormPositions.map(p => ({
+  private mapPosition(p: PositionOrmEntity): Position {
+    return {
       id: p.id,
       name: p.name,
       latitude: p.latitude,
       longitude: p.longitude,
-      distanceKm: p.distanceKm,
-      type: p.type,
+      distanceKm: p.distanceKm ?? null,
+      type: p.type ?? null,
+    };
+  }
+
+  private mapObservation(d: PositionDataOrmEntity): PositionData {
+    return {
+      id: d.id,
+      station_id: d.stationId,
+      station_name: d.position?.name,
+      datetime: d.datetime.toISOString(),
+      salinity: d.salinity ?? null,
+      water_level: d.waterLevel ?? null,
+    };
+  }
+
+  async getPositions(): Promise<Position[]> {
+    return (await this.positionRepo.find({ order: { id: 'ASC' } })).map((p) =>
+      this.mapPosition(p),
+    );
+  }
+
+  async getPositionById(id: string): Promise<Position | null> {
+    const position = await this.positionRepo.findOneBy({ id });
+    return position ? this.mapPosition(position) : null;
+  }
+
+  async getObservations(
+    positionId: string,
+    from: Date,
+    to: Date,
+    limit: number,
+  ): Promise<PositionData[]> {
+    const rows = await this.dataRepo.find({
+      where: { stationId: positionId, datetime: Between(from, to) },
+      relations: ['position'],
+      order: { datetime: 'ASC', id: 'ASC' },
+      take: limit,
+    });
+    return rows.map((row) => this.mapObservation(row));
+  }
+
+  async getSnapshot(at: Date, earliest: Date): Promise<StationSnapshot[]> {
+    const stations = await this.getPositions();
+    const observations = await this.dataRepo
+      .createQueryBuilder('observation')
+      .distinctOn(['observation.stationId'])
+      .where(
+        'observation.datetime >= :earliest AND observation.datetime <= :at',
+        { earliest, at },
+      )
+      .orderBy('observation.stationId', 'ASC')
+      .addOrderBy('observation.datetime', 'DESC')
+      .addOrderBy('observation.id', 'ASC')
+      .getMany();
+    const byStation = new Map(
+      observations.map((row) => [row.stationId, this.mapObservation(row)]),
+    );
+    return stations.map((station) => ({
+      station,
+      observation: byStation.get(station.id) ?? null,
     }));
+  }
+
+  async getDataRange(
+    stationIds: string[],
+    from?: Date | null,
+    to?: Date | null,
+  ): Promise<DataRange> {
+    if (stationIds.length === 0) return { from: null, to: null };
+    const query = this.dataRepo
+      .createQueryBuilder('observation')
+      .select('MIN(observation.datetime)', 'from')
+      .addSelect('MAX(observation.datetime)', 'to')
+      .where('observation.stationId IN (:...stationIds)', { stationIds });
+    if (from) query.andWhere('observation.datetime >= :from', { from });
+    if (to) query.andWhere('observation.datetime <= :to', { to });
+    const row = await query.getRawOne<{
+      from: Date | string | null;
+      to: Date | string | null;
+    }>();
+    return {
+      from: row?.from ? new Date(row.from).toISOString() : null,
+      to: row?.to ? new Date(row.to).toISOString() : null,
+    };
   }
 
   async getPositionDataByDateRange(
@@ -35,71 +120,15 @@ export class TypeOrmPositionRepository implements IPositionRepository {
     endTime: string,
     positionId: string,
   ): Promise<PositionData[]> {
-    const start = this.parseApiDateTime(date, startTime);
-    const end = this.parseApiDateTime(date, endTime);
-
-    if (start > end) {
+    const from = parseLegacyDateTime(date, startTime);
+    const to = parseLegacyDateTime(date, endTime);
+    if (from > to)
       throw new BadRequestException('startTime must be before endTime');
-    }
-
-    const ormData = await this.dataRepo.find({
-      where: {
-        stationId: positionId,
-        datetime: Between(start, end),
-      },
-      relations: ['position'], // Lấy luôn bảng cha (positions) để lấy tên trạm
-      order: { datetime: 'ASC' },
+    const rows = await this.dataRepo.find({
+      where: { stationId: positionId, datetime: Between(from, to) },
+      relations: ['position'],
+      order: { datetime: 'ASC', id: 'ASC' },
     });
-
-    // Map ORM Entity sang cấu trúc mà API/Frontend cần
-    return ormData.map(d => ({
-      id: d.id,
-      station_id: d.stationId,
-      station_name: d.position?.name,
-      datetime: d.datetime.toISOString(),
-      salinity: d.salinity,
-      water_level: d.waterLevel,
-    }));
-  }
-
-  private parseApiDateTime(date: string, time: string): Date {
-    const dateMatch = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(date);
-    const timeMatch = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(time);
-
-    if (!dateMatch || !timeMatch) {
-      throw new BadRequestException(
-        'Invalid date range. Expected date YYYY-MM-DD and time HH:mm:ss',
-      );
-    }
-
-    const [, year, monthRaw, dayRaw] = dateMatch;
-    const [, hourRaw, minuteRaw, secondRaw = '00'] = timeMatch;
-    const month = Number(monthRaw);
-    const day = Number(dayRaw);
-    const hour = Number(hourRaw);
-    const minute = Number(minuteRaw);
-    const second = Number(secondRaw);
-
-    if (
-      month < 1 ||
-      month > 12 ||
-      day < 1 ||
-      day > 31 ||
-      hour > 23 ||
-      minute > 59 ||
-      second > 59
-    ) {
-      throw new BadRequestException('Invalid date range value');
-    }
-
-    const value = new Date(
-      `${year}-${monthRaw.padStart(2, '0')}-${dayRaw.padStart(2, '0')}T${hourRaw.padStart(2, '0')}:${minuteRaw}:${secondRaw}+07:00`,
-    );
-
-    if (Number.isNaN(value.getTime())) {
-      throw new BadRequestException('Invalid date range value');
-    }
-
-    return value;
+    return rows.map((row) => this.mapObservation(row));
   }
 }

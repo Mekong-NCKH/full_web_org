@@ -21,6 +21,6 @@ export class PositionOrmEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   type: string;
 
-  @OneToMany(() => PositionDataOrmEntity, data => data.position)
+  @OneToMany(() => PositionDataOrmEntity, (data) => data.position)
   data: PositionDataOrmEntity[];
 }

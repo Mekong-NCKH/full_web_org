@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from 'react';
+import { ReactNode } from 'react';
 
 import ScrollToTop from '@/components/scroll-to-top';
 import { useUserStore } from '@/stores';
@@ -18,18 +18,6 @@ type LoggedInProps = {
 
 const LoggedInLayout = ({ children }: LoggedInProps) => {
   const { user, setUser } = useUserStore();
-  const [sidebarMobileOpened, setSidebarMobileOpened] = useState(false);
-  
-  // Initialize sidebar state from localStorage, default to true
-  const [sidebarDesktopOpened, setSidebarDesktopOpened] = useState(() => {
-    const saved = localStorage.getItem('sidebarDesktopOpened');
-    return saved !== null ? saved === 'true' : true;
-  });
-
-  // Persist sidebar state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('sidebarDesktopOpened', String(sidebarDesktopOpened));
-  }, [sidebarDesktopOpened]);
 
   return (
     <>
@@ -45,20 +33,11 @@ const LoggedInLayout = ({ children }: LoggedInProps) => {
           opened={sidebarDesktopOpened}
         /> */}
         <div className="relative flex min-h-screen w-full min-w-0 flex-col bg-white">
-          <Header
-            user={user}
-            setUser={setUser}
-            toggleSidebarMobile={() =>
-              setSidebarMobileOpened(!sidebarMobileOpened)
-            }
-            toggleSidebarDesktop={() =>
-              setSidebarDesktopOpened(!sidebarDesktopOpened)
-            }
-          />
+          <Header user={user} setUser={setUser} />
           <Subheader />
           <Breadcrumbs />
           {/* <CountdownBar /> */}
-          <div className="3xl:p-10 relative flex flex-col p-5">{children}</div>
+          <div className="relative flex flex-col p-5 3xl:p-10">{children}</div>
         </div>
       </div>
       <Footer />

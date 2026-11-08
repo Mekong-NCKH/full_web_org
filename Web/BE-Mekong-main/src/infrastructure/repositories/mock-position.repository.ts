@@ -4,6 +4,38 @@ import { Position, PositionData } from '../../domain/entities/position.entity';
 
 @Injectable()
 export class MockPositionRepository implements IPositionRepository {
+  async getPositionById(id: string): Promise<Position | null> {
+    return (
+      (await this.getPositions()).find((position) => position.id === id) ?? null
+    );
+  }
+
+  async getSnapshot(_at: Date, _earliest: Date) {
+    void _at;
+    void _earliest;
+    return (await this.getPositions()).map((station) => ({
+      station,
+      observation: null,
+    }));
+  }
+
+  getObservations(
+    _id: string,
+    _from: Date,
+    _to: Date,
+    _limit: number,
+  ): Promise<PositionData[]> {
+    void _id;
+    void _from;
+    void _to;
+    void _limit;
+    return Promise.resolve([]);
+  }
+
+  getDataRange() {
+    return Promise.resolve({ from: null, to: null });
+  }
+
   getPositions(): Promise<Position[]> {
     return Promise.resolve([
       {

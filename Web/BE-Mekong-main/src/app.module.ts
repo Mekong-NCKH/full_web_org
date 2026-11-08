@@ -11,12 +11,15 @@ import { IPositionRepositoryToken } from './domain/repositories/position.reposit
 import { PositionOrmEntity } from './infrastructure/database/entities/position.orm-entity';
 import { PositionDataOrmEntity } from './infrastructure/database/entities/position-data.orm-entity';
 import { TypeOrmPositionRepository } from './infrastructure/repositories/typeorm-position.repository';
-import { DatabaseBootstrapService } from './infrastructure/database/database-bootstrap.service';
+import { MonitoringController } from './presentation/controllers/monitoring.controller';
 
 @Module({
   imports: [
     // 1. Load file .env
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['.env.local', '.env'],
+    }),
 
     // 2. Cấu hình kết nối PostgreSQL
     TypeOrmModule.forRoot({
@@ -40,9 +43,8 @@ import { DatabaseBootstrapService } from './infrastructure/database/database-boo
     // 3. Đăng ký Entities cho Repository
     TypeOrmModule.forFeature([PositionOrmEntity, PositionDataOrmEntity]),
   ],
-  controllers: [HealthController, PositionController],
+  controllers: [HealthController, PositionController, MonitoringController],
   providers: [
-    DatabaseBootstrapService,
     PositionUseCases,
     {
       // Tráo đổi sự phụ thuộc: Từ nay khi app gọi Token này, nó sẽ dùng TypeOrmPositionRepository

@@ -4,11 +4,11 @@ services:
     container_name: thuyvan-postgres
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: secretpassword
-      POSTGRES_DB: thuyvan_db
+      POSTGRES_USER: ${DB_USER:-full_web_org}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in a local .env before starting PostgreSQL}
+      POSTGRES_DB: ${DB_NAME:-neondb}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       # Mount thư mục init.sql vào đúng nơi Postgres yêu cầu để chạy tự động
       - ./docker/postgres/init:/docker-entrypoint-initdb.d

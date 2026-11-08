@@ -1,0 +1,11 @@
+# Local secrets and generated deployment metadata
+**/.env
+**/.env.*
+!**/.env.example
+**/.vercel/
+
+# Generated JavaScript artifacts
+**/node_modules/
+**/dist/
+**/coverage/
+**/tsconfig.tsbuildinfo

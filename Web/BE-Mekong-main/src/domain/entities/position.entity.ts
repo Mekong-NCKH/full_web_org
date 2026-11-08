@@ -3,8 +3,8 @@ export class Position {
   name: string;
   latitude: number;
   longitude: number;
-  distanceKm?: number;
-  type?: string;
+  distanceKm?: number | null;
+  type?: string | null;
 }
 
 export class PositionData {
@@ -12,6 +12,12 @@ export class PositionData {
   station_id: string;
   station_name?: string;
   datetime: string;
-  salinity?: number;
-  water_level?: number;
+  salinity?: number | null;
+  water_level?: number | null;
 }
+
+export type StationSnapshot = {
+  station: Position;
+  observation: PositionData | null;
+};
+export type DataRange = { from: string | null; to: string | null };
