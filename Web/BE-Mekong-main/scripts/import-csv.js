@@ -119,16 +119,36 @@ function buildDemoDataset() {
   const missing = requiredHeaders.filter(header => !headers.has(header));
   if (missing.length) throw new Error(`BaoDinh.csv is missing required columns: ${missing.join(', ')}`);
 
-  const selectedRows = rows.filter(row => row.Date >= demoStart && row.Date <= demoEnd);
+  const selectedRows = rows
+    .map((row, index) => ({ row, sourceRow: index + 2 }))
+    .filter(({ row }) => row.Date >= demoStart && row.Date <= demoEnd);
   if (selectedRows.length !== hoursPerStation) {
     throw new Error(`Expected ${hoursPerStation} hourly demo rows; found ${selectedRows.length}.`);
   }
 
   const seenTimes = new Set();
   const observations = [];
-  const valueSummary = Object.fromEntries(Object.keys(publicStations).map(id => [id, { count: 0, minMgL: Infinity, maxMgL: -Infinity }]));
+  const rawObservations = [];
+  const valueSummary = Object.fromEntries(Object.keys(publicStations).map(id => [id, {
+    rowCount: 0,
+    numericCount: 0,
+    missingCount: 0,
+    zeroCount: 0,
+    negativeCount: 0,
+    minMgL: null,
+    maxMgL: null,
+  }]));
+  const waterLevelSummary = Object.fromEntries(Object.keys(publicStations).map(id => [id, {
+    rowCount: 0,
+    numericCount: 0,
+    missingCount: 0,
+    zeroCount: 0,
+    negativeCount: 0,
+    minMeters: null,
+    maxMeters: null,
+  }]));
 
-  for (const row of selectedRows) {
+  for (const { row, sourceRow } of selectedRows) {
     const timestamp = sourceDateToTimestamp(row.Date);
     if (seenTimes.has(timestamp)) throw new Error(`Duplicate demo timestamp: ${row.Date}`);
     seenTimes.add(timestamp);
@@ -138,11 +158,28 @@ function buildDemoDataset() {
       const waterLevelMeters = parseSourceValue(row[`Z${stationId}`], `Z${stationId} at ${row.Date}`);
       const salinityMgL = sourceSalinityGPerL === null ? null : sourceSalinityGPerL * salinityToMgL;
       const summary = valueSummary[stationId];
+      const waterSummary = waterLevelSummary[stationId];
+      summary.rowCount += 1;
+      waterSummary.rowCount += 1;
 
       if (salinityMgL !== null) {
-        summary.count += 1;
-        summary.minMgL = Math.min(summary.minMgL, salinityMgL);
-        summary.maxMgL = Math.max(summary.maxMgL, salinityMgL);
+        summary.numericCount += 1;
+        if (salinityMgL === 0) summary.zeroCount += 1;
+        if (salinityMgL < 0) summary.negativeCount += 1;
+        summary.minMgL = summary.minMgL === null ? salinityMgL : Math.min(summary.minMgL, salinityMgL);
+        summary.maxMgL = summary.maxMgL === null ? salinityMgL : Math.max(summary.maxMgL, salinityMgL);
+      } else {
+        summary.missingCount += 1;
+      }
+
+      if (waterLevelMeters !== null) {
+        waterSummary.numericCount += 1;
+        if (waterLevelMeters === 0) waterSummary.zeroCount += 1;
+        if (waterLevelMeters < 0) waterSummary.negativeCount += 1;
+        waterSummary.minMeters = waterSummary.minMeters === null ? waterLevelMeters : Math.min(waterSummary.minMeters, waterLevelMeters);
+        waterSummary.maxMeters = waterSummary.maxMeters === null ? waterLevelMeters : Math.max(waterSummary.maxMeters, waterLevelMeters);
+      } else {
+        waterSummary.missingCount += 1;
       }
 
       observations.push({
@@ -152,17 +189,29 @@ function buildDemoDataset() {
         salinity: salinityMgL,
         waterLevel: waterLevelMeters,
       });
+      rawObservations.push({
+        stationId,
+        datetime: timestamp,
+        sourceRow,
+        rawSalinity: row[`S${stationId}`] ?? '',
+        rawWaterLevel: row[`Z${stationId}`] ?? '',
+        salinityGPerL: sourceSalinityGPerL,
+        waterLevelMeters,
+      });
     }
   }
 
   if (seenTimes.size !== hoursPerStation) throw new Error('Demo timestamps are incomplete.');
   for (const [stationId, summary] of Object.entries(valueSummary)) {
-    if (summary.count !== hoursPerStation) {
-      throw new Error(`${stationId} has ${summary.count} salinity values; expected ${hoursPerStation}.`);
+    if (summary.rowCount !== hoursPerStation) {
+      throw new Error(`${stationId} has ${summary.rowCount} salinity rows; expected ${hoursPerStation}.`);
+    }
+    if (waterLevelSummary[stationId].rowCount !== hoursPerStation) {
+      throw new Error(`${stationId} has ${waterLevelSummary[stationId].rowCount} water-level rows; expected ${hoursPerStation}.`);
     }
   }
 
-  return { observations, valueSummary };
+  return { observations, rawObservations, valueSummary, waterLevelSummary };
 }
 
 function createInsertValues(rows, columns) {
@@ -273,7 +322,8 @@ async function main() {
     stations: Object.keys(publicStations),
     hourlyRowsPerStation: hoursPerStation,
     observationsToWrite: dataset.observations.length,
-    salinityRangeMgL: dataset.valueSummary,
+    salinitySummaryMgL: dataset.valueSummary,
+    waterLevelSummaryMeters: dataset.waterLevelSummary,
   };
 
   if (mode === 'dry-run') {
@@ -286,11 +336,21 @@ async function main() {
   process.stdout.write(`${JSON.stringify({ ...result, mode: 'applied' }, null, 2)}\n`);
 }
 
-main().catch(error => {
-  const aggregateDetails = error instanceof AggregateError
-    ? error.errors.map(item => item?.code || item?.message).filter(Boolean).join(', ')
-    : '';
-  const message = error?.message || error?.code || aggregateDetails || 'Unknown error';
-  process.stderr.write(`${message}\n`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch(error => {
+    const aggregateDetails = error instanceof AggregateError
+      ? error.errors.map(item => item?.code || item?.message).filter(Boolean).join(', ')
+      : '';
+    const message = error?.message || error?.code || aggregateDetails || 'Unknown error';
+    process.stderr.write(`${message}\n`);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  buildDemoDataset,
+  loadEnv,
+  publicStations,
+  rootDir,
+  sourcePath,
+};

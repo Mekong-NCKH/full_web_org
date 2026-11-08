@@ -12,6 +12,7 @@ services:
     volumes:
       # Mount thư mục init.sql vào đúng nơi Postgres yêu cầu để chạy tự động
       - ./docker/postgres/init:/docker-entrypoint-initdb.d
+      - ./scripts/sql/phase2-data-platform.sql:/docker-entrypoint-initdb.d/02-phase2-data-platform.sql:ro
       # Lưu trữ dữ liệu vật lý để khi xóa container không bị mất data
       - thuyvan-db-data:/var/lib/postgresql/data
 

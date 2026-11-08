@@ -1,6 +1,6 @@
 # Monitoring API v1
 
-This is the Phase 1 backend contract for the `positions` and `position_data` schema. Salinity is normalized from the selected CSV's g/L values to mg/L (multiply by 1000). Water level remains in meters and uses the source sea-level reference. Measurement quality and field provenance remain `unverified`; responses describe the historical demo dataset and do not claim live readings.
+This is the Phase 1 public contract for the `positions` and `position_data` schema. Salinity is normalized from the selected CSV's g/L values to mg/L (multiply by 1000). Water level remains in meters and uses the source sea-level reference. Measurement quality remains `unverified`; responses describe the historical demo dataset and do not claim live readings. The additive Phase 2 schema can record source-file and raw-field provenance after its guarded import runs; that provenance does not change the quality status or this V1 response contract.
 
 The public station set is the current intersection of station headers in `BaoDinh.csv` and coordinates in `Sanility_GIS_Monitoring/cong_locations.csv`: `baodinh`, `gocat`, and `vamkenh`. V1 returns canonical coordinates from `cong_locations.csv`; it does not expose the legacy database coordinates for other stations. The importer now reads `BaoDinh.csv` only, per the Phase 0 Go Cat source choice. Existing database rows still have unverified provenance until the selected source is imported and reconciled.
 
@@ -34,7 +34,7 @@ The legacy `/api/data/positions` and `/api/data/date-range/:date/:startTime/:end
 
 ## Database and import
 
-Application startup no longer runs the legacy 100-record bootstrap. Initialize a new database with `docker/postgres/init/` or another reviewed schema migration. For an existing database, the optional `scripts/sql/phase1-observation-index.sql` adds a query index; obtain normal database change authorization and take appropriate backups before applying it. No migration or import is run automatically.
+Application startup no longer runs the legacy 100-record bootstrap. Initialize a new database with `docker/postgres/init/` or another reviewed schema migration. For an existing database, the optional `scripts/sql/phase1-observation-index.sql` adds a query index; obtain normal database change authorization and take appropriate backups before applying it. The Phase 2 provenance and model-result schema is in `scripts/sql/phase2-data-platform.sql`; see `docs/phase2-data-platform.md` for its dry-run, guarded migration, and idempotent source import. No migration or import is run automatically.
 
 `npm run data:demo:check` validates the selected `BaoDinh.csv` source and reports a dry-run summary without connecting to a database. `npm run data:demo:rebuild` requires `DEMO_DATA_REBUILD_CONFIRM=rebuild-public-demo-2024-06-07`; it replaces only the `positions` and `position_data` tables in the configured Neon database named `neondb`, in one transaction, with three approved stations and 4,392 hourly observations for June-July 2024. Salinity is converted from g/L to mg/L, and zero, negative, and missing values are preserved. Other database tables are untouched.
 
