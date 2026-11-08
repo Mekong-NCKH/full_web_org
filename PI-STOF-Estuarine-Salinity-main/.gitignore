@@ -1,0 +1,16 @@
+# 1. Ignore Raw & Processed Data (Keep strictly confidential)
+data/raw/
+data/processed/
+
+# 2. Python Environments & Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+pistof_env/
+
+# 3. Jupyter & OS Logs
+.ipynb_checkpoints/
+*.log
+.DS_Store
