@@ -25,7 +25,7 @@ describe('monitoring API', () => {
   const observation = {
     id: 'o1',
     station_id: 'gocat',
-    datetime: '2024-01-01T00:00:00.000Z',
+    datetime: '2024-06-15T00:00:00.000Z',
     salinity: -125,
     water_level: 0,
   };
@@ -71,12 +71,12 @@ describe('monitoring API', () => {
   it('returns mg/L and meter metadata while preserving negative and zero values', async () => {
     const response = await request(getServer())
       .get('/api/v1/observations/snapshot')
-      .query({ at: '2024-01-01T07:00:00+07:00', maxAgeHours: '6' })
+      .query({ at: '2024-06-15T07:00:00+07:00', maxAgeHours: '6' })
       .expect(200);
 
     expect(repo.getSnapshot).toHaveBeenCalledWith(
-      new Date('2024-01-01T00:00:00Z'),
-      new Date('2023-12-31T18:00:00Z'),
+      new Date('2024-06-15T00:00:00Z'),
+      new Date('2024-06-14T18:00:00Z'),
     );
     expect(response.body.data[0].observation.salinity).toEqual({
       value: -125,
@@ -100,7 +100,7 @@ describe('monitoring API', () => {
     ]);
     const response = await request(getServer())
       .get('/api/v1/stations/gocat/observations')
-      .query({ from: '2024-01-01T00:00Z', to: '2024-01-02T00:00Z' })
+      .query({ from: '2024-06-15T00:00Z', to: '2024-06-16T00:00Z' })
       .expect(200);
 
     expect(response.body.data[0].salinity).toEqual({
@@ -130,15 +130,15 @@ describe('monitoring API', () => {
     const endpoint = '/api/v1/stations/gocat/observations';
     await request(getServer())
       .get(endpoint)
-      .query({ from: '2024-01-02T00:00Z', to: '2024-01-01T00:00Z' })
+      .query({ from: '2024-06-16T00:00Z', to: '2024-06-15T00:00Z' })
       .expect(400);
     await request(getServer())
       .get(endpoint)
-      .query({ from: '2024-01-01T00:00Z', to: '2024-02-02T00:00Z' })
+      .query({ from: '2024-06-01T00:00Z', to: '2024-07-03T00:00Z' })
       .expect(400);
     await request(getServer())
       .get('/api/v1/stations/missing/observations')
-      .query({ from: '2024-01-01T00:00Z', to: '2024-01-02T00:00Z' })
+      .query({ from: '2024-06-15T00:00Z', to: '2024-06-16T00:00Z' })
       .expect(404);
     expect(repo.getObservations).not.toHaveBeenCalled();
   });
@@ -166,7 +166,7 @@ describe('monitoring API', () => {
   it('uses the same normalized measurement shape for time series and snapshots', async () => {
     const response = await request(getServer())
       .get('/api/v1/stations/gocat/observations')
-      .query({ from: '2024-01-01T00:00Z', to: '2024-01-02T00:00Z' })
+      .query({ from: '2024-06-15T00:00Z', to: '2024-06-16T00:00Z' })
       .expect(200);
 
     expect(response.body.data[0]).toMatchObject({
