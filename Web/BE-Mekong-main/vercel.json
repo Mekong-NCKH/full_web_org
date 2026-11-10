@@ -3,12 +3,6 @@
   "framework": "nestjs",
   "installCommand": "npm ci --include=dev",
   "outputDirectory": null,
-  "functions": {
-    "src/main.ts": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
   "git": {
     "deploymentEnabled": {
       "main": false
