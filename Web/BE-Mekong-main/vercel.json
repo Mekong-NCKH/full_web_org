@@ -1,19 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
+  "framework": "nestjs",
   "installCommand": "npm ci --include=dev",
+  "outputDirectory": null,
   "functions": {
-    "api/index.ts": {
+    "src/main.ts": {
       "maxDuration": 30,
       "memory": 1024
     }
   },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
-    }
-  ],
   "git": {
     "deploymentEnabled": {
       "main": false
