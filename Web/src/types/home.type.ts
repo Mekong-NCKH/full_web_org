@@ -1,3 +1,5 @@
+import type { Feature, FeatureCollection, Geometry } from 'geojson';
+
 export type NewsType = {
   title: string;
   link: string;
@@ -57,24 +59,12 @@ export type GeoFeatureProperties = {
 /**
  * GeoJSON Feature structure
  */
-export type GeoFeature = {
-  type: 'Feature';
-  properties: GeoFeatureProperties;
-  geometry: {
-    type: string;
-    coordinates: any;
-  };
-  [key: string]: any;
-};
+export type GeoFeature = Feature<Geometry, GeoFeatureProperties>;
 
 /**
  * GeoJSON FeatureCollection structure
  */
-export type GeoFeatureCollection = {
-  type: 'FeatureCollection';
-  features: GeoFeature[];
-  [key: string]: any;
-};
+export type GeoFeatureCollection = FeatureCollection<Geometry, GeoFeatureProperties>;
 
 /**
  * Zone data structure from context.json
@@ -109,8 +99,6 @@ export type SearchSelectionType = 'PROVINCE' | 'ZONE' | 'REGION';
 export type SearchSelection = {
   type: SearchSelectionType;
   name: string;
-  [key: string]: any;
-  zoneMap: { [zoneName: string]: string[] };
 };
 
 /**

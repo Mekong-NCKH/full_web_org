@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Web/package-lock.json
+      - run: npm ci
+      - run: npm run check-types
+      - run: npm run lint
+      - run: npm run build
+
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: full_web_org
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: neondb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U full_web_org -d neondb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    defaults:
+      run:
+        working-directory: Web/BE-Mekong-main
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: full_web_org
+      DB_PASSWORD: ci-only-password
+      DB_NAME: neondb
+      DB_SSL: "false"
+      E2E_DATABASE_RESET_ALLOWED: "true"
+      PUBLIC_DATA_START: "2024-06-01T00:00:00+07:00"
+      PUBLIC_DATA_END: "2024-07-31T23:59:59+07:00"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Web/BE-Mekong-main/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test -- --runInBand
+      - run: npm run test:e2e -- --runInBand
+      - run: npm run data:demo:check
+      - run: npm run build
+
+  deploy-production:
+    name: deploy-production
+    runs-on: ubuntu-latest
+    needs: [frontend, backend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.VERCEL_DEPLOY_ENABLED == 'true'
+    environment: production
+    permissions:
+      contents: read
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_FRONTEND_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
+      VERCEL_BACKEND_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+      VERCEL_FRONTEND_URL: ${{ vars.VERCEL_FRONTEND_URL }}
+      VERCEL_BACKEND_URL: ${{ vars.VERCEL_BACKEND_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate deployment configuration
+        run: |
+          for key in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_FRONTEND_PROJECT_ID VERCEL_BACKEND_PROJECT_ID VERCEL_FRONTEND_URL VERCEL_BACKEND_URL; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required GitHub Actions secret or variable: $key" >&2
+              exit 1
+            fi
+          done
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Deploy backend
+        working-directory: Web/BE-Mekong-main
+        run: |
+          mkdir -p .vercel
+          node -e 'require("node:fs").writeFileSync(".vercel/project.json", JSON.stringify({orgId: process.env.VERCEL_ORG_ID, projectId: process.env.VERCEL_BACKEND_PROJECT_ID}))'
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Deploy frontend
+        working-directory: Web
+        run: |
+          mkdir -p .vercel
+          node -e 'require("node:fs").writeFileSync(".vercel/project.json", JSON.stringify({orgId: process.env.VERCEL_ORG_ID, projectId: process.env.VERCEL_FRONTEND_PROJECT_ID}))'
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+          vercel build --prod --token="$VERCEL_TOKEN"
+          vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Smoke-test public production endpoints
+        run: |
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "$VERCEL_FRONTEND_URL/" -o /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "$VERCEL_FRONTEND_URL/home" -o /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "$VERCEL_BACKEND_URL/api/v1/status" | jq -e '.data.api == "available" and .data.publicDataWindow == "configured"'
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "$VERCEL_BACKEND_URL/api/v1/stations" | jq -e '.success == true and ([.data[].id] | sort) == ["baodinh", "gocat", "vamkenh"]'
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "$VERCEL_BACKEND_URL/api/v1/metadata/data-range" | jq -e '.success == true and .data.from != null and .data.to != null'
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "$VERCEL_BACKEND_URL/api/v1/gis/reference-rules" | jq -e '.success == true and .data.id == "mekong-legacy-gis-reference" and .data.confirmationStatus == "unconfirmed"'
+          curl --fail --silent --show-error --retry 5 --retry-delay 5 "$VERCEL_BACKEND_URL/api/v1/gis/reference-status?at=2024-06-15T00:00:00Z&mode=replay" | jq -e '.success == true and .mode == "replay" and ([.data[].station.id] | sort) == ["baodinh", "gocat", "vamkenh"]'

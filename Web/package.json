@@ -2,19 +2,18 @@
   "name": "frontend",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "npm@11.13.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "prod": "vite --mode production",
     "build": "tsc -b && vite build",
     "lint": "eslint src",
-    "prepare": "husky",
-    "deploy:prod": "tsc -b && vite build --mode production && firebase deploy -P prod",
-    "deploy:dev": "tsc -b && vite build --mode development && firebase deploy -P dev",
+    "prepare": "cd .. && husky Web/.husky",
+    "deploy:preview": "npx --yes vercel@latest pull --yes --environment=preview && npx --yes vercel@latest build && npx --yes vercel@latest deploy --prebuilt",
+    "deploy:prod": "npx --yes vercel@latest pull --yes --environment=production && npx --yes vercel@latest build --prod && npx --yes vercel@latest deploy --prebuilt --prod",
     "preview": "vite preview",
-    "check-types": "tsc --project tsconfig.json --pretty --noEmit",
-    "generate:query": "./scripts/generate.sh",
-    "codegen": "openapi-rq -i ./src/ielts.yaml -c axios -o ./src/generated --pageParam null --nextPageParam null"
+    "check-types": "tsc --project tsconfig.json --pretty --noEmit"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -40,6 +39,7 @@
     "clsx": "^2.1.1",
     "daisyui": "^5.5.5",
     "dayjs": "^1.11.13",
+    "date-fns": "^4.4.0",
     "dompurify": "^3.2.5",
     "eslint-plugin-check-file": "^3.1.0",
     "eslint-plugin-jest-dom": "^5.5.0",
@@ -48,12 +48,10 @@
     "firebase": "^11.4.0",
     "formik": "^2.4.6",
     "framer-motion": "^12.15.0",
-    "install": "^0.13.0",
     "jsdom": "^26.0.0",
     "leaflet": "^1.9.4",
     "lodash": "^4.17.21",
     "lottie-react": "^2.4.1",
-    "npm": "^11.6.2",
     "number-to-words": "^1.2.4",
     "react": "^19.0.0",
     "react-apexcharts": "^1.8.0",
@@ -82,6 +80,7 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tanstack/router-devtools": "^1.133.22",
     "@types/leaflet": "^1.9.21",
+    "@types/geojson": "^7946.0.16",
     "@types/lodash": "^4",
     "@types/node": "^22.13.10",
     "@types/number-to-words": "^1",
@@ -115,9 +114,9 @@
   },
   "lint-staged": {
     "*.+(ts|tsx)": [
-      "bash -c 'yarn lint'",
-      "bash -c 'yarn check-types'",
-      "yarn prettier --write"
+      "eslint --fix",
+      "npm run check-types",
+      "prettier --write"
     ]
   }
 }

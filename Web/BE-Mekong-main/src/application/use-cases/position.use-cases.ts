@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 // Thêm từ khóa 'type' trước IPositionRepository
 import {
   IPositionRepositoryToken,
@@ -15,6 +15,25 @@ export class PositionUseCases {
 
   async getAllPositions(): Promise<Position[]> {
     return this.positionRepository.getPositions();
+  }
+
+  async getObservations(
+    id: string,
+    from: Date,
+    to: Date,
+    limit: number,
+  ): Promise<PositionData[]> {
+    if (!(await this.positionRepository.getPositionById(id)))
+      throw new NotFoundException('Station not found');
+    return this.positionRepository.getObservations(id, from, to, limit);
+  }
+
+  getSnapshot(at: Date, earliest: Date) {
+    return this.positionRepository.getSnapshot(at, earliest);
+  }
+
+  getDataRange(stationIds: string[], from?: Date | null, to?: Date | null) {
+    return this.positionRepository.getDataRange(stationIds, from, to);
   }
 
   async getPositionData(

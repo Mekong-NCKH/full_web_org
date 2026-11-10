@@ -6,9 +6,8 @@ export class HealthController {
   getRootHealth() {
     return {
       success: true,
-      message: 'Server is healthy',
-      runtime: 'vercel-serverless',
-      database: 'neon-serverless',
+      status: 'ok',
+      service: 'mekong-salinity-api',
     };
   }
 }

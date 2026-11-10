@@ -1,386 +1,1034 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useEffect, useState, useMemo } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import {
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
-import LoggedInLayout from '@/components/logged-in-layout'
-import type { RawDataRecord } from '@/types/home.type'
+import {
+  fetchDataRange,
+  fetchGISReferenceRules,
+  fetchObservationHistory,
+  fetchSnapshot,
+  fetchStations,
+  latestObservationAtOrBefore,
+  SNAPSHOT_MAX_AGE_HOURS,
+} from '@/services/monitoring-api';
+import type {
+  DataRange,
+  GISReferenceStatus,
+  GISReferenceRuleSet,
+  Observation,
+  SelectedStationReading,
+  SnapshotResponse,
+  Station,
+} from '@/types/monitoring.type';
 
-// using automatic JSX runtime
-import InteractiveMap from './components/interactive-map';
-import SalinityNewsSwiper from './components/salinity-news-swipper';
-import SideLineChart from './components/side-line-char';
-import TimeSelectorContent from './components/time-selector';
+import { evaluateGISReferenceRule } from './gis-reference';
 
-export const Route = createFileRoute('/home/')({
-  component: RouteComponent,
-})
+const InteractiveMap = lazy(() => import('./components/interactive-map'));
 
+export const Route = createFileRoute('/home/')({ component: RouteComponent });
 
-// === CÁC HÀM HELPER (Đưa ra ngoài component) ===
+const chartColors = ['#0f766e', '#2563eb', '#db4961'];
 
-/**
- * Helper to extract salinity value from a record
- */
-const getSal = (rec: Record<string, any>) => {
-  const keys = ['sal_song_gpl', 'sal_dong_gpl', 'sal_surface_gpl', 'sal_bottom_gpl'];
-  for (const k of keys) {
-    if (rec[k] !== undefined && rec[k] !== null) return Number(rec[k]);
-  }
-  return null;
-};
+function formatDateTime(value: string | Date | null): string {
+  if (!value) return '—';
+  const date = value instanceof Date ? value : new Date(value);
+  if (!Number.isFinite(date.getTime())) return '—';
+  return new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Ho_Chi_Minh',
+  }).format(date);
+}
 
-/**
- * Helper to extract depth (surface) value
- */
-const getDepth = (rec: Record<string, any>) => {
-  const keys = ['m_song_m', 'm_dong_m', 'depth_surface_m', 'depth_bottom_m'];
-  for (const k of keys) {
-    if (rec[k] !== undefined && rec[k] !== null) return Number(rec[k]);
-  }
-  return null;
-};
+function formatChartTick(value: string): string {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'Asia/Ho_Chi_Minh',
+  }).format(date);
+}
 
-/**
- * Helper to parse timestamp from data.json format
- */
-const parseTimestamp = (datePart: string, timePart: string) => {
-  let ts = null;
-  try {
-    // Thử chuẩn ISO
-    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
-      ts = new Date(datePart + 'T' + (timePart || '00:00') + ':00');
-    } else {
-      // Thử fallback dd/mm
-      const d = (datePart || '').split('/').map(s => s.trim());
-      if (d.length >= 2) {
-        const day = d[0].padStart(2, '0');
-        const month = d[1].padStart(2, '0');
-        const iso = `2020-${month}-${day}T${(timePart || '00:00')}:00`;
-        ts = new Date(iso);
-      } else {
-        ts = new Date(); // Fallback
-      }
-    }
-  } catch {
-    ts = new Date(); // Lỗi
-  }
-  return ts.getTime();
-};
+function formatMeasurement(
+  value: number | null | undefined,
+  unit: string,
+): string {
+  if (value === null || value === undefined || !Number.isFinite(value))
+    return '—';
+  return `${value.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ${unit}`;
+}
 
+function getObservationTone(
+  reading: SelectedStationReading,
+  loading: boolean,
+): {
+  label: string;
+  className: string;
+} {
+  if (loading && reading.freshness === 'missing')
+    return {
+      label: 'Đang tải',
+      className: 'bg-slate-100 text-slate-600',
+    };
+  if (reading.freshness === 'missing')
+    return {
+      label: 'Không có số liệu',
+      className: 'bg-slate-100 text-slate-600',
+    };
+  if (reading.freshness === 'stale')
+    return {
+      label: 'Bản ghi cũ',
+      className: 'bg-amber-50 text-amber-800',
+    };
+  return {
+    label:
+      reading.observation?.quality === 'unverified'
+        ? 'Chưa xác minh'
+        : 'Có số liệu',
+    className: 'bg-slate-100 text-slate-700',
+  };
+}
+
+function Icon({ kind }: { kind: 'wave' | 'pin' | 'clock' | 'drop' | 'water' }) {
+  const paths = {
+    wave: (
+      <path d="M3 12c2.2 0 2.2-2 4.4-2s2.2 2 4.4 2 2.2-2 4.4-2 2.2 2 4.4 2M3 17c2.2 0 2.2-2 4.4-2s2.2 2 4.4 2 2.2-2 4.4-2 2.2 2 4.4 2" />
+    ),
+    pin: (
+      <>
+        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
+      </>
+    ),
+    clock: (
+      <>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </>
+    ),
+    drop: <path d="M12 3s-6 6.6-6 11a6 6 0 1 0 12 0c0-4.4-6-11-6-11Z" />,
+    water: (
+      <>
+        <path d="M3 8c1.8 0 1.8-1.5 3.6-1.5S8.4 8 10.2 8s1.8-1.5 3.6-1.5S15.6 8 17.4 8 19.2 6.5 21 6.5" />
+        <path d="M3 14c1.8 0 1.8-1.5 3.6-1.5s1.8 1.5 3.6 1.5 1.8-1.5 3.6-1.5 1.8 1.5 3.6 1.5 1.8-1.5 3.6-1.5M5 19c1.5 0 1.5-1.2 3-1.2S9.5 19 11 19s1.5-1.2 3-1.2 1.5 1.2 3 1.2" />
+      </>
+    ),
+  };
+  return (
+    <svg
+      aria-hidden="true"
+      className="size-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {paths[kind]}
+    </svg>
+  );
+}
+
+function MetricCard({
+  icon,
+  label,
+  value,
+  detail,
+}: {
+  icon: 'pin' | 'clock' | 'drop' | 'water';
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)]">
+      <div className="mb-5 flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-800">
+        <Icon kind={icon} />
+      </div>
+      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+        {value}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">{detail}</p>
+    </div>
+  );
+}
+
+function ChartPanel({
+  title,
+  description,
+  data,
+  stations,
+  metric,
+  selectedAt,
+  loading,
+}: {
+  title: string;
+  description: string;
+  data: Array<Record<string, string | number | null>>;
+  stations: Station[];
+  metric: 'salinity' | 'waterLevel';
+  selectedAt: Date | null;
+  loading: boolean;
+}) {
+  const unit = metric === 'salinity' ? 'mg/L' : 'm';
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-slate-900">{title}</h3>
+          <p className="mt-1 text-xs text-slate-500">{description}</p>
+        </div>
+        <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+          {unit}
+        </span>
+      </div>
+      {data.length === 0 ? (
+        <div
+          role="status"
+          className="grid h-56 place-items-center rounded-xl bg-slate-50 text-sm text-slate-500"
+        >
+          {loading
+            ? 'Đang tải dữ liệu lịch sử từ API…'
+            : 'Không có dữ liệu lịch sử trong khoảng thời gian này.'}
+        </div>
+      ) : (
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={data}
+              margin={{ top: 8, right: 8, bottom: 0, left: 4 }}
+            >
+              <CartesianGrid
+                stroke="#e8edf2"
+                strokeDasharray="3 3"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="at"
+                tickFormatter={formatChartTick}
+                minTickGap={32}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: '#64748b', fontSize: 11 }}
+              />
+              <YAxis
+                width={60}
+                tickLine={false}
+                axisLine={false}
+                tick={{ fill: '#64748b', fontSize: 11 }}
+              />
+              <Tooltip
+                labelFormatter={(value) => formatDateTime(String(value))}
+                formatter={(value, name) => [
+                  formatMeasurement(
+                    typeof value === 'number' ? value : null,
+                    unit,
+                  ),
+                  String(name),
+                ]}
+                contentStyle={{
+                  borderRadius: 12,
+                  borderColor: '#e2e8f0',
+                  boxShadow: '0 8px 28px rgba(15,23,42,.08)',
+                }}
+              />
+              <Legend
+                verticalAlign="top"
+                height={30}
+                iconType="circle"
+                iconSize={7}
+              />
+              {selectedAt && (
+                <ReferenceLine
+                  x={selectedAt.toISOString()}
+                  stroke="#475569"
+                  strokeDasharray="4 4"
+                />
+              )}
+              {stations.map((station, index) => (
+                <Line
+                  key={station.id}
+                  type="monotone"
+                  dataKey={station.id}
+                  name={station.name}
+                  stroke={chartColors[index % chartColors.length]}
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </section>
+  );
+}
 
 function RouteComponent() {
-  // === STATE QUẢN LÝ THỜI GIAN ===
-  const [currentTime] = useState(new Date('2020-01-01T10:00:00'));
-  const [selectedTime, setSelectedTime] = useState(currentTime);
+  const [stations, setStations] = useState<Station[]>([]);
+  const [dataRange, setDataRange] = useState<DataRange | null>(null);
+  const [latestSnapshot, setLatestSnapshot] = useState<SnapshotResponse | null>(
+    null,
+  );
+  const [history, setHistory] = useState<Record<string, Observation[]>>({});
+  const [selectedAt, setSelectedAt] = useState<Date | null>(null);
+  const [dataMode, setDataMode] = useState<'historical' | 'replay'>(
+    'historical',
+  );
+  const [isReplaying, setIsReplaying] = useState(false);
+  const [referenceRuleSet, setReferenceRuleSet] =
+    useState<GISReferenceRuleSet | null>(null);
+  const [referenceRulesLoading, setReferenceRulesLoading] = useState(true);
+  const [selectedStationId, setSelectedStationId] = useState<string | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  // State để lưu dữ liệu thô (fetch 1 lần)
-  const [allRawData, setAllRawData] = useState<RawDataRecord[]>([]);
-
-  // === useEffect===
-  // Chỉ dùng để fetch và lưu dữ liệu thô 1 lần
   useEffect(() => {
-    fetch('/data/data.json')
-      .then((r) => r.json())
-      .then((rows) => {
-        if (!Array.isArray(rows)) return setAllRawData([]);
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
 
-        // Thêm trường _ts (timestamp) vào mỗi row để sắp xếp và lọc
-        rows.forEach((r) => {
-          r._ts = parseTimestamp(r.date, r.time);
-        });
-
-        setAllRawData(rows);
+    Promise.all([
+      fetchStations(controller.signal),
+      fetchDataRange(controller.signal),
+    ])
+      .then(([nextStations, nextRange]) => {
+        setStations(nextStations);
+        setDataRange(nextRange);
+        setSelectedStationId((current) =>
+          current && nextStations.some((station) => station.id === current)
+            ? current
+            : (nextStations[0]?.id ?? null),
+        );
+        setSelectedAt(nextRange.to ? new Date(nextRange.to) : null);
       })
-      .catch(() => {
-        console.error('Failed to load data.json');
-        setAllRawData([]);
+      .catch((reason) => {
+        if (!controller.signal.aborted)
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'Không thể kết nối đến API giám sát.',
+          );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
       });
-  }, []); // Chỉ chạy 1 lần khi component mount
 
-  // === useMemo (LOGIC MỚI) ===
-  // Tính toán lại dữ liệu cho biểu đồ MỖI KHI selectedTime thay đổi
-  const locationCharts = useMemo(() => {
-    if (allRawData.length === 0) return [];
+    return () => controller.abort();
+  }, [reloadKey]);
 
-    // 1. Group dữ liệu thô theo location
-    const groups: Record<string, Record<string, any>[]> = {};
-    allRawData.forEach((r: Record<string, any>) => {
-      const loc = r.location || 'Unknown';
-      groups[loc] = groups[loc] || [];
-      groups[loc].push(r);
-    });
+  useEffect(() => {
+    if (!dataRange?.to) {
+      setLatestSnapshot(null);
+      return;
+    }
+    const controller = new AbortController();
+    fetchSnapshot(new Date(dataRange.to), controller.signal)
+      .then(setLatestSnapshot)
+      .catch(() => {
+        if (!controller.signal.aborted) setLatestSnapshot(null);
+      });
+    return () => controller.abort();
+  }, [dataRange]);
 
-    // 2. Các địa điểm mong muốn (từ code của bạn)
-    const desired = ['Rạch Bùn', 'Cống Gò Công', 'Vàm Kênh', 'Long Hải'];
-    const selectedTimeMs = selectedTime.getTime();
+  useEffect(() => {
+    if (!dataRange?.from || !dataRange.to || stations.length === 0) {
+      setHistory({});
+      return;
+    }
 
-    // 3. Xử lý dữ liệu cho từng địa điểm
-    const results = desired.map((loc) => {
-      const recs = (groups[loc] || []).slice().sort((a, b) => (a._ts || 0) - (b._ts || 0));
-      if (recs.length === 0) return null; // Bỏ qua nếu không có data
+    const controller = new AbortController();
+    setHistoryLoading(true);
+    Promise.all(
+      stations.map(
+        async (station) =>
+          [
+            station.id,
+            await fetchObservationHistory(
+              station.id,
+              dataRange.from!,
+              dataRange.to!,
+              controller.signal,
+            ),
+          ] as const,
+      ),
+    )
+      .then((entries) => setHistory(Object.fromEntries(entries)))
+      .catch((reason) => {
+        if (!controller.signal.aborted)
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'Không thể tải lịch sử quan trắc.',
+          );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setHistoryLoading(false);
+      });
 
-      /**
-       * Hàm helper để xử lý cho 1 loại dữ liệu (salinity hoặc depth)
-       * @returns {object} { labels, values, latestValue, highlightedIndex }
-       */
-      const processChartData = (records: Record<string, any>[], valueGetter: (r: Record<string, any>) => number | null) => {
-        // Lọc ra các record có giá trị hợp lệ
-        const validRecs: Record<string, any>[] = records
-          .map(r => ({ ...r, value: valueGetter(r) }))
-          .filter(r => r.value !== null && !Number.isNaN(r.value));
+    return () => controller.abort();
+  }, [dataRange, stations]);
 
-        if (validRecs.length === 0) {
-          return { labels: [], values: [], latestValue: null, highlightedIndex: -1 };
-        }
+  const observationsAtSelection = useMemo(() => {
+    const selectedTime = selectedAt?.getTime();
+    if (selectedTime === undefined || !selectedAt)
+      return {} as Record<string, SelectedStationReading>;
 
-        // Tìm điểm gần nhất trong quá khứ so với selectedTime
-        let targetIndex = validRecs.findIndex((r: Record<string, any>) => r._ts > selectedTimeMs);
-        if (targetIndex === -1) {
-          // Mọi điểm đều ở quá khứ -> chọn điểm cuối
-          targetIndex = validRecs.length - 1;
-        } else if (targetIndex === 0) {
-          // Mọi điểm đều ở tương lai -> chọn điểm đầu
-          targetIndex = 0;
-        } else {
-          // targetIndex là điểm *sau* selectedTime, ta lùi 1
-          targetIndex = targetIndex - 1;
-        }
+    const latestAtWindowEnd = dataRange?.to
+      ? new Date(dataRange.to).getTime() === selectedTime
+      : false;
+    const snapshotById = new Map(
+      latestSnapshot?.data.map((row) => [row.station.id, row.observation]) ??
+        [],
+    );
+    return Object.fromEntries(
+      stations.map((station) => {
+        const historicalObservation = latestObservationAtOrBefore(
+          history[station.id] ?? [],
+          selectedAt,
+        );
+        const observation = latestAtWindowEnd
+          ? (snapshotById.get(station.id) ?? historicalObservation)
+          : historicalObservation;
+        if (!observation)
+          return [
+            station.id,
+            { observation: null, freshness: 'missing' },
+          ];
+        const observedAt = new Date(observation.observedAt).getTime();
+        if (!Number.isFinite(observedAt) || observedAt > selectedTime)
+          return [
+            station.id,
+            { observation: null, freshness: 'missing' },
+          ];
+        const ageMs = selectedTime - observedAt;
+        return [
+          station.id,
+          {
+            observation,
+            freshness:
+              ageMs <= SNAPSHOT_MAX_AGE_HOURS * 60 * 60 * 1000
+                ? 'fresh'
+                : 'stale',
+          },
+        ];
+      }),
+    ) as Record<string, SelectedStationReading>;
+  }, [dataRange, history, latestSnapshot, selectedAt, stations]);
 
-        const latestValue = validRecs[targetIndex].value;
-
-        // Lấy 5 điểm (2 trước, 1 giữa, 2 sau)
-        let sliceStart = Math.max(0, targetIndex - 2);
-        let sliceEnd = Math.min(validRecs.length, targetIndex + 3); // +3 vì slice() không bao gồm
-
-        // Điều chỉnh nếu ở 2 đầu
-        const sliceLength = sliceEnd - sliceStart;
-        if (sliceLength < 5) {
-          if (sliceStart === 0) {
-            sliceEnd = Math.min(validRecs.length, 5);
-          } else if (sliceEnd === validRecs.length) {
-            sliceStart = Math.max(0, validRecs.length - 5);
-          }
-        }
-
-        const chartSlice = validRecs.slice(sliceStart, sliceEnd);
-
-        // Tìm lại index của điểm highlight (bên trong mảng 5 điểm)
-        const highlightedIndex = chartSlice.findIndex((r: Record<string, any>) => r._ts === validRecs[targetIndex]._ts);
-
-        return {
-          labels: chartSlice.map(r => r.time || ''),
-          values: chartSlice.map(r => r.value),
-          latestValue, // Giá trị tại điểm được tô vàng
-          highlightedIndex, // Vị trí (0-4) của điểm tô vàng
+  const chartData = useMemo(() => {
+    const points = new Map<string, Record<string, string | number | null>>();
+    for (const station of stations) {
+      for (const observation of history[station.id] ?? []) {
+        const point = points.get(observation.observedAt) ?? {
+          at: observation.observedAt,
         };
-      };
+        point[station.id] = observation.salinity.value;
+        point[`${station.id}_water`] = observation.waterLevel.value;
+        points.set(observation.observedAt, point);
+      }
+    }
+    return [...points.values()].sort((left, right) =>
+      String(left.at).localeCompare(String(right.at)),
+    );
+  }, [history, stations]);
 
-      // Xác định loại chính (từ code của bạn)
-      let salCount = 0, depthCount = 0;
-      recs.forEach(r => { if (getSal(r) !== null) salCount++; if (getDepth(r) !== null) depthCount++; });
-      const type = salCount >= Math.max(1, depthCount) ? 'salinity' : (depthCount > 0 ? 'depth' : 'salinity');
+  const replayTimes = useMemo(
+    () =>
+      chartData
+        .map((point) => new Date(String(point.at)).getTime())
+        .filter((time) => Number.isFinite(time)),
+    [chartData],
+  );
 
-      // Xử lý dữ liệu cho loại chính (mặn hoặc mực nước)
-      const mainChart = processChartData(recs, type === 'salinity' ? getSal : getDepth);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchGISReferenceRules(controller.signal)
+      .then(setReferenceRuleSet)
+      .catch(() => {
+        if (!controller.signal.aborted) setReferenceRuleSet(null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setReferenceRulesLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
 
-      // Xử lý dữ liệu cho mực nước (luôn luôn, cho biểu đồ thứ 2)
-      const depthChart = processChartData(recs, getDepth);
+  useEffect(() => {
+    if (!isReplaying || !selectedAt || replayTimes.length === 0) return;
+    const timer = window.setTimeout(() => {
+      const nextTime = replayTimes.find(
+        (time) => time > selectedAt.getTime(),
+      );
+      if (nextTime === undefined) {
+        setIsReplaying(false);
+        return;
+      }
+      setSelectedAt(new Date(nextTime));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [isReplaying, replayTimes, selectedAt]);
 
-      return {
-        location: loc,
-        labels: mainChart.labels,
-        values: mainChart.values,
-        latestValue: mainChart.latestValue,
-        highlightedIndex: mainChart.highlightedIndex,
+  const referenceStatuses = useMemo(
+    () =>
+      Object.fromEntries(
+        stations.map((station) => [
+          station.id,
+          evaluateGISReferenceRule(
+            referenceRuleSet,
+            station.id,
+            observationsAtSelection[station.id]?.observation ?? null,
+          ),
+        ]),
+      ) as Record<string, GISReferenceStatus>,
+    [observationsAtSelection, referenceRuleSet, stations],
+  );
 
-        depthLabels: depthChart.labels,
-        depthValues: depthChart.values,
-        latestDepth: depthChart.latestValue,
-        highlightedIndexDepth: depthChart.highlightedIndex,
+  const salinityChartData = useMemo(
+    () =>
+      chartData.map((point) => {
+        const values = Object.fromEntries(
+          stations.map((station) => [station.id, point[station.id] ?? null]),
+        );
+        return { at: point.at, ...values };
+      }),
+    [chartData, stations],
+  );
 
-        distanceKm: 2.5, // Giữ nguyên
-        measurementType: type,
-      };
-    });
+  const waterLevelChartData = useMemo(
+    () =>
+      chartData.map((point) => {
+        const values = Object.fromEntries(
+          stations.map((station) => [
+            station.id,
+            point[`${station.id}_water`] ?? null,
+          ]),
+        );
+        return { at: point.at, ...values };
+      }),
+    [chartData, stations],
+  );
 
-    return results.filter(r => r !== null); // Lọc bỏ các location không có data
-
-  }, [allRawData, selectedTime]); // <-- Tự động chạy lại khi 2 giá trị này thay đổi
+  const historyCount = Object.values(history).reduce(
+    (total, rows) => total + rows.length,
+    0,
+  );
+  const periodText =
+    dataRange?.from && dataRange.to
+      ? `${formatDateTime(dataRange.from)} – ${formatDateTime(dataRange.to)}`
+      : 'Chưa có khoảng dữ liệu';
+  const selectedStation =
+    stations.find((station) => station.id === selectedStationId) ?? null;
 
   return (
-    <LoggedInLayout>
-      <div className='w-full px-4'>
-        <div className='grid grid-cols-1 gap-5 md:grid-cols-3'>
-          {/* ============================================
-        ============  NỘI DUNG CỘT BÊN TRÁI  ==========
-        ============================================
-      */}
-          <div className='justify-center rounded-3xl bg-white px-4 text-lg md:col-span-2 md:text-2xl' style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}>
-            <h1 className='my-3 px-4 text-center  text-[#0060C9]' style={{ fontFamily: 'UTM Black' }}>
-              BẢNG THÔNG TIN TỔNG HỢP
-            </h1>
-            <div className='mb-0  block rounded-t-lg bg-white p-6 shadow-sm'>
-
-              {/* === TimeSelectorContent (ĐÃ SỬA) === */}
-              {/* Truyền state (selectedTime) và hàm (setSelectedTime) vào */}
-              <div className="flex justify-center">
-                <TimeSelectorContent
-                  currentTime={currentTime}
-                  selectedTime={selectedTime}
-                  onTimeSelect={setSelectedTime}
-                />
-              </div>
-            </div>
-
-            {/* Interactive Map - full width with proper spacing */}
-            <div className=' mb-6 mt-0'>
-              <InteractiveMap />
-            </div>
-
-            {/* THÔNG TIN XÂM NHẬP MẶN TỪ CÁC BÀI BÁO ĐƯỜNG LINK */}
-            <div className='mb-4 px-4'>
-              {/* Ô TIÊU ĐỀ */}
-              <div className='mb-3 max-w-[260px] rounded-sm bg-[#F0F9FF] p-2 text-2xl font-semibold' style={{ fontFamily: 'UTM Black' }}>
-                <span>XÂM NHẬP MẶN </span>
-                <span className='font-bold text-red-700'>MỚI NHẤT</span>
-              </div>
-
-              {/* swiper animation */}
-              <SalinityNewsSwiper />
-            </div>
-          </div>
-
-          {/* ============================================
-          =============== NỘI DUNG CỘT BÊN PHẢI ======
-          ============================================
-        */}
-
-          <div className='md:col-span-1'>
-            <div className='overflow-hidden rounded-2xl bg-white shadow-lg'>
-              {/* Top card - DIỄN BIẾN MẶN */}
-              <div className='relative'>
-                <div className='flex flex-col bg-white'>
-                  {/* header */}
-                  <div className='w-full bg-[#005DCE] p-4 text-center font-bold text-white md:text-3xl' style={{ fontFamily: 'UTM Black' }}>
-                    <h1>DIỄN BIẾN MẶN</h1>
-                  </div>
-
-                  {/* === Biểu đồ MẶN (ĐÃ SỬA) === */}
-                  <div className='mt-4 px-4'>
-                    {/* Dùng biến locationCharts đã được useMemo tính toán */}
-                    {locationCharts && locationCharts.length > 0 ? (
-                      <div className='space-y-3'>
-                        {locationCharts.map((c) => (
-                          <SideLineChart
-                            key={c.location}
-                            pointName={c.location}
-                            value={c.latestValue} // Giá trị tại điểm highlight
-                            measurementType={c.measurementType}
-                            distanceKm={c.distanceKm}
-                            data={{ labels: c.labels, values: c.values }} // Dữ liệu 5 điểm
-                            highlightedIndex={c.highlightedIndex} // Điểm tô vàng
-                            color="#0ea5e9"
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className='p-4 text-center text-gray-500'>Đang tải dữ liệu...</p>
-                    )}
-                  </div>
-
-                  {/* xem thêm link */}
-                  <div className='mt-4 flex justify-end pr-4'>
-                    <a href="#" className='mr-2 text-black hover:underline' style={{ fontFamily: 'UTM Black' }}>Xem thêm</a>
-                  </div>
-                </div>
-              </div>
-
-              {/* second cards - TÌNH HÌNH MỰC NƯỚC */}
-              <div className='relative'>
-                <div className='mt-3 flex flex-col overflow-hidden rounded-lg bg-white'>
-                  {/* header */}
-                  <div className='w-full bg-[#005DCE] p-4 text-center font-bold text-white md:text-3xl' style={{ fontFamily: 'UTM Black' }}>
-                    <h1>TÌNH HÌNH MỰC NƯỚC</h1>
-                  </div>
-
-                  {/* === Biểu đồ MỰC NƯỚC (ĐÃ SỬA) === */}
-                  <div className='mt-4 px-4'>
-                    {locationCharts && locationCharts.some(c => (c.depthValues && c.depthValues.length > 0)) ? (
-                      <div className='space-y-3'>
-                        {locationCharts.map((c) => (c.depthValues && c.depthValues.length > 0) ? (
-                          <SideLineChart
-                            key={`${c.location}-depth`}
-                            pointName={c.location}
-                            value={c.latestDepth} // Giá trị tại điểm highlight
-                            measurementType="depth"
-                            distanceKm={c.distanceKm}
-                            data={{ labels: c.depthLabels, values: c.depthValues }} // Dữ liệu 5 điểm
-                            highlightedIndex={c.highlightedIndexDepth} // Điểm tô vàng
-                            color="#06b6d4"
-                          />
-                        ) : null)}
-                      </div>
-                    ) : (
-                      // Fallback nếu không có dữ liệu mực nước
-                      <p className='p-4 text-center text-gray-500'>Không có dữ liệu mực nước.</p>
-                    )}
-                  </div>
-
-                  {/* xem thêm link */}
-                  <div className='mt-4 flex justify-end pr-4'>
-                    <a href="#" className='mr-2 text-black hover:underline' style={{ fontFamily: 'UTM Black' }}>Xem thêm</a>
-                  </div>
-                </div>
-              </div>
-
-              {/* Notification / expandable box (giữ nguyên) */}
-              <div className='h-96 p-4'>
-                <div className='flex h-full flex-col rounded-lg border border-blue-100 bg-gradient-to-br from-white to-blue-50 p-4 shadow-inner'>
-                  <div className='mb-3 flex items-center justify-between'>
-                    <div className='flex items-center gap-3'>
-                      <svg className='size-6 text-blue-600' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'>
-                        <path d='M15 17H9' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round' strokeLinejoin='round' />
-                        <path d='M12 22C13.1046 22 14 21.1046 14 20H10C10 21.1046 10.8954 22 12 22Z' fill='currentColor' />
-                        <path d='M18 8C18 5.23858 15.7614 3 13 3H11C8.23858 3 6 5.23858 6 8V12L4 14V15H20V14L18 12V8Z' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' strokeLinejoin='round' />
-                      </svg>
-                      <h2 className='text-lg font-bold' style={{ fontFamily: 'UTM Black' }}>THÔNG BÁO</h2>
-                      <span className='ml-2 text-xs text-gray-500'>Mới cập nhật</span>
-                    </div>
-                    <div className='text-sm text-gray-600'>
-                      <a href='#' className='text-blue-600 hover:underline'>Xem tất cả</a>
-                    </div>
-                  </div>
-
-                  <div className='flex-1 overflow-auto pr-2'>
-                    <ul className='space-y-3'>
-                      <li className='flex items-start gap-3'>
-                        <span className='mt-1 size-2 shrink-0 rounded-full bg-blue-500' />
-                        <div>
-                          <div className='text-sm text-gray-800'>Nội dung thông báo hoặc chỉ đạo chỉ định sẽ được hiển thị ở đây một cách ngắn gọn và rõ ràng.</div>
-                          <div className='mt-1 text-xs text-gray-400'>01/11/2025 09:30</div>
-                        </div>
-                      </li>
-                      <li className='flex items-start gap-3'>
-                        <span className='mt-1 size-2 shrink-0 rounded-full bg-amber-400' />
-                        <div>
-                          <div className='text-sm text-gray-800'>Khung này sẽ được mở rộng linh hoạt dựa trên nội dung được chèn vào, giúp người dùng dễ dàng nắm bắt thông tin quan trọng.</div>
-                          <div className='mt-1 text-xs text-gray-400'>31/10/2025 14:20</div>
-                        </div>
-                      </li>
-                      <li className='flex items-start gap-3'>
-                        <span className='mt-1 size-2 shrink-0 rounded-full bg-green-400' />
-                        <div>
-                          <div className='text-sm text-gray-800'>Vui lòng kiểm tra thường xuyên để cập nhật những thông báo mới nhất từ hệ thống.</div>
-                          <div className='mt-1 text-xs text-gray-400'>30/10/2025 08:10</div>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <main className="min-h-screen bg-[#f4f7fa] text-slate-900">
+      <header className="sticky top-0 z-[1100] border-b border-slate-200/80 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
+          <a
+            href="#top"
+            className="flex items-center gap-3"
+            aria-label="Mekong Salinity Monitor, trang đầu"
+          >
+            <span className="flex size-10 items-center justify-center rounded-xl bg-[#0d3b4a] text-teal-100">
+              <Icon kind="wave" />
+            </span>
+            <span className="leading-tight">
+              <span className="block text-sm font-bold tracking-wide text-slate-900">
+                MEKONG MONITOR
+              </span>
+              <span className="block text-[11px] text-slate-500">
+                Cổng dữ liệu quan trắc
+              </span>
+            </span>
+          </a>
+          <nav
+            className="hidden items-center gap-7 text-sm font-medium text-slate-600 md:flex"
+            aria-label="Điều hướng chính"
+          >
+            <a className="transition hover:text-teal-800" href="#overview">
+              Tổng quan
+            </a>
+            <a className="transition hover:text-teal-800" href="#stations">
+              Trạm quan trắc
+            </a>
+            <a className="transition hover:text-teal-800" href="#history">
+              Lịch sử
+            </a>
+            <a className="transition hover:text-teal-800" href="#about-data">
+              Nguồn dữ liệu
+            </a>
+          </nav>
+          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-amber-800">
+            {dataMode === 'replay'
+              ? 'PHÁT LẠI DỮ LIỆU LỊCH SỬ'
+              : 'BẢN DEMO LỊCH SỬ'}
+          </span>
         </div>
+      </header>
+
+      <div
+        id="top"
+        className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8"
+      >
+        <section
+          id="overview"
+          className="relative overflow-hidden rounded-[28px] bg-[#0d3542] px-6 py-8 text-white shadow-[0_20px_60px_rgba(13,53,66,0.16)] sm:px-10 sm:py-11"
+        >
+          <div className="pointer-events-none absolute -right-10 -top-24 size-80 rounded-full border border-white/10" />
+          <div className="pointer-events-none absolute -right-2 -top-16 size-64 rounded-full border border-white/10" />
+          <div className="relative grid items-end gap-8 lg:grid-cols-[1fr_340px]">
+            <div className="max-w-3xl">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-teal-200/20 bg-teal-200/10 px-3 py-1.5 text-xs font-medium text-teal-100">
+                <span className="size-1.5 rounded-full bg-teal-300" /> Dữ liệu
+                lịch sử · 01/06–31/07/2024
+              </div>
+              <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-[42px]">
+                Theo dõi độ mặn và mực nước tại các cửa sông Mekong
+              </h1>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+                Bản đồ quan trắc và chuỗi số liệu theo giờ giúp người dân xem
+                diễn biến tại từng trạm trong khoảng demo đã chọn.
+              </p>
+              <a
+                href="#stations"
+                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0d3542] transition hover:bg-teal-50"
+              >
+                Xem dữ liệu trạm <span aria-hidden="true">↓</span>
+              </a>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-300">
+                  Cửa sổ dữ liệu
+                </p>
+                <Icon kind="clock" />
+              </div>
+              <p className="mt-3 text-lg font-semibold">
+                Tháng 6 – tháng 7, 2024
+              </p>
+              <p className="mt-1 text-xs leading-5 text-slate-300">
+                Múi giờ hiển thị: Việt Nam (UTC+07:00)
+              </p>
+              <div className="mt-4 border-t border-white/10 pt-4 text-xs leading-5 text-slate-300">
+                Đây là dữ liệu lịch sử phục vụ demo, không phải số đo thời gian
+                thực.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800"
+          >
+            <span>Không tải được dữ liệu từ backend: {error}</span>
+            <button
+              onClick={() => setReloadKey((key) => key + 1)}
+              className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 font-semibold hover:bg-rose-100"
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        <section
+          className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+          aria-label="Chỉ số tổng quan"
+        >
+          <MetricCard
+            icon="pin"
+            label="Trạm có dữ liệu công khai"
+            value={loading ? '…' : String(stations.length)}
+            detail="Chỉ gồm trạm có vị trí đã xác định"
+          />
+          <MetricCard
+            icon="clock"
+            label="Khoảng demo"
+            value="61 ngày"
+            detail="01/06/2024 đến 31/07/2024"
+          />
+          <MetricCard
+            icon="drop"
+            label="Quan trắc độ mặn"
+            value={historyLoading ? '…' : historyCount.toLocaleString('vi-VN')}
+            detail="Giá trị chuẩn hóa sang mg/L"
+          />
+          <MetricCard
+            icon="water"
+            label="Mực nước"
+            value={stations.length ? 'Theo giờ' : '—'}
+            detail="Mét, theo mốc mực nước biển của nguồn"
+          />
+        </section>
+
+        <section id="stations" className="mt-10 scroll-mt-24">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+                Giám sát theo vị trí
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                Bản đồ trạm quan trắc
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500">
+              Nguồn tọa độ: cong_locations.csv
+            </p>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(310px,0.75fr)]">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-3">
+              <Suspense
+                fallback={
+                  <div className="grid h-[500px] place-items-center text-sm text-slate-500">
+                    Đang tải bản đồ…
+                  </div>
+                }
+              >
+                <InteractiveMap
+                  stations={stations}
+                  observations={observationsAtSelection}
+                  referenceStatuses={referenceStatuses}
+                  ruleSetVersion={referenceRuleSet?.version ?? null}
+                  dataMode={dataMode}
+                  selectedStationId={selectedStationId}
+                  onStationSelect={setSelectedStationId}
+                  loading={loading}
+                  loadError={Boolean(error && stations.length === 0)}
+                  readingLoading={historyLoading}
+                />
+              </Suspense>
+            </div>
+
+            <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold text-slate-900">
+                    Tình hình tại trạm
+                  </h3>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {selectedAt
+                      ? formatDateTime(selectedAt)
+                      : 'Chưa chọn thời điểm'}
+                  </p>
+                </div>
+                <span className="rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600">
+                  UTC+7
+                </span>
+              </div>
+
+              <label
+                htmlFor="demo-time"
+                className="mt-5 block text-xs font-medium text-slate-600"
+              >
+                Chọn thời điểm trong dữ liệu
+              </label>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReplaying(false);
+                    setDataMode('historical');
+                  }}
+                  aria-pressed={dataMode === 'historical'}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${dataMode === 'historical' ? 'border-teal-700 bg-teal-50 text-teal-900' : 'border-slate-200 bg-white text-slate-600'}`}
+                >
+                  Lịch sử
+                </button>
+                <button
+                  type="button"
+                  disabled={historyLoading || replayTimes.length === 0}
+                  onClick={() => {
+                    setDataMode('replay');
+                    if (
+                      !selectedAt ||
+                      selectedAt.getTime() >=
+                        replayTimes[replayTimes.length - 1]
+                    ) {
+                      setSelectedAt(new Date(replayTimes[0]));
+                    }
+                    setIsReplaying(true);
+                  }}
+                  className="rounded-lg border border-teal-700 bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Phát lại
+                </button>
+                <button
+                  type="button"
+                  disabled={!isReplaying}
+                  onClick={() => setIsReplaying(false)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Tạm dừng
+                </button>
+                <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                  Live: chưa cấu hình
+                </span>
+                <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                  Forecast: chưa cấu hình
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                Replay phát tuần tự các quan trắc lịch sử theo thời gian. Đây là
+                mô phỏng, không phải luồng dữ liệu trực tiếp.
+              </p>
+              <input
+                id="demo-time"
+                className="mt-3 h-2 w-full cursor-pointer accent-teal-700"
+                type="range"
+                min={dataRange?.from ? new Date(dataRange.from).getTime() : 0}
+                max={dataRange?.to ? new Date(dataRange.to).getTime() : 0}
+                step={60 * 60 * 1000}
+                value={selectedAt?.getTime() ?? 0}
+                disabled={!dataRange?.from || !dataRange.to || loading}
+                onChange={(event) => {
+                  setIsReplaying(false);
+                  setDataMode('historical');
+                  setSelectedAt(new Date(Number(event.target.value)));
+                }}
+              />
+              <div className="mt-2 flex justify-between text-[11px] text-slate-500">
+                <span>
+                  {dataRange?.from ? formatDateTime(dataRange.from) : '—'}
+                </span>
+                <span>
+                  {dataRange?.to ? formatDateTime(dataRange.to) : '—'}
+                </span>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {loading ? (
+                  <div className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">
+                    Đang tải danh sách trạm…
+                  </div>
+                ) : stations.length === 0 ? (
+                  <div className="rounded-xl bg-slate-50 p-5 text-center text-sm text-slate-500">
+                    Chưa có trạm trong cửa sổ dữ liệu.
+                  </div>
+                ) : (
+                  stations.map((station) => {
+                    const reading = observationsAtSelection[station.id] ?? {
+                      observation: null,
+                      freshness: 'missing',
+                    };
+                    const observation = reading.observation;
+                    const salinity = observation?.salinity.value ?? null;
+                    const referenceStatus = referenceStatuses[station.id];
+                    const tone = getObservationTone(
+                      reading,
+                      historyLoading,
+                    );
+                    const active = station.id === selectedStationId;
+                    const freshnessNote =
+                      reading.freshness === 'stale'
+                        ? ` · cách thời điểm chọn hơn ${SNAPSHOT_MAX_AGE_HOURS} giờ`
+                        : '';
+                    const recordLabel =
+                      reading.freshness === 'stale'
+                        ? 'Bản ghi cũ'
+                        : 'Bản ghi';
+                    const recordTimestamp = observation
+                      ? formatDateTime(observation.observedAt)
+                      : null;
+                    const recordDescription = recordTimestamp
+                      ? `${recordLabel}: ${recordTimestamp}${freshnessNote}`
+                      : historyLoading
+                        ? 'Đang tải số liệu lịch sử…'
+                        : 'Không có bản ghi trước thời điểm đã chọn';
+                    return (
+                      <button
+                        key={station.id}
+                        onClick={() => setSelectedStationId(station.id)}
+                        className={`w-full rounded-xl border p-4 text-left transition ${active ? 'border-teal-700/40 bg-teal-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="flex items-center gap-2 font-semibold text-slate-900">
+                            <span
+                              className={`size-2 rounded-full ${active ? 'bg-teal-700' : 'bg-slate-300'}`}
+                            />
+                            {station.name}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-1 text-[10px] font-semibold ${tone.className}`}
+                          >
+                            {tone.label}
+                          </span>
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="text-[11px] text-slate-500">Độ mặn</p>
+                            <p className="mt-0.5 text-sm font-semibold text-slate-900">
+                              {formatMeasurement(salinity, 'mg/L')}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-slate-500">
+                              Mực nước
+                            </p>
+                            <p className="mt-0.5 text-sm font-semibold text-slate-900">
+                              {formatMeasurement(
+                                observation?.waterLevel.value,
+                                'm',
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-[10px] text-slate-500">
+                          {recordDescription}
+                        </p>
+                        <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-indigo-800">
+                              Mô phỏng tham khảo v
+                              {referenceRuleSet?.version ?? '…'}
+                            </span>
+                            <span className="text-xs font-semibold text-indigo-950">
+                              {referenceStatus?.label ??
+                                (referenceRulesLoading
+                                  ? 'Đang tải quy tắc'
+                                  : 'Không có kết quả')}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[10px] leading-4 text-indigo-800">
+                            Chưa xác nhận vận hành; không phải trạng thái thực
+                            tế của cửa.
+                          </p>
+                          {referenceStatus?.basis && (
+                            <p className="mt-1 text-[10px] leading-4 text-indigo-700">
+                              Căn cứ: {referenceStatus.basis}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="history" className="mt-10 scroll-mt-24">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+                Chuỗi quan trắc
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+                Diễn biến theo thời gian
+              </h2>
+            </div>
+            <span className="text-xs text-slate-500">
+              {historyLoading
+                ? 'Đang tải lịch sử…'
+                : `${historyCount.toLocaleString('vi-VN')} bản ghi đã tải`}
+            </span>
+          </div>
+          <div className="grid gap-5 xl:grid-cols-2">
+            <ChartPanel
+              title="Độ mặn"
+              description="So sánh chuỗi theo giờ tại các trạm công khai."
+              data={salinityChartData}
+              stations={stations}
+              metric="salinity"
+              selectedAt={selectedAt}
+              loading={historyLoading}
+            />
+            <ChartPanel
+              title="Mực nước"
+              description="Giá trị mét theo mốc mực nước biển của nguồn."
+              data={waterLevelChartData}
+              stations={stations}
+              metric="waterLevel"
+              selectedAt={selectedAt}
+              loading={historyLoading}
+            />
+          </div>
+        </section>
+
+        <section
+          id="about-data"
+          className="mt-10 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-7"
+        >
+          <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+                Minh bạch dữ liệu
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-slate-900">
+                Nguồn và cách đọc số liệu
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                Màn hình lấy danh sách trạm, ảnh chụp theo thời điểm và chuỗi
+                lịch sử trực tiếp từ Monitoring API. Phạm vi demo dùng
+                BaoDinh.csv, giới hạn ở các trạm có tọa độ đã xác định.
+              </p>
+            </div>
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl bg-slate-50 p-4">
+                <dt className="text-xs text-slate-500">Độ mặn</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                  mg/L · chuẩn hóa từ g/L × 1.000
+                </dd>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-4">
+                <dt className="text-xs text-slate-500">Mực nước</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                  m · theo mốc mực nước biển nguồn
+                </dd>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-4">
+                <dt className="text-xs text-slate-500">Khoảng thời gian</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                  {periodText}
+                </dd>
+              </div>
+              <div className="rounded-xl bg-slate-50 p-4">
+                <dt className="text-xs text-slate-500">
+                  Trạng thái kiểm chứng
+                </dt>
+                <dd className="mt-1 text-sm font-semibold text-amber-800">
+                  Nguồn và chất lượng: chưa xác minh độc lập
+                </dd>
+              </div>
+            </dl>
+          </div>
+          {selectedStation && (
+            <p className="mt-5 text-[11px] text-slate-500">
+              Tọa độ trạm đang chọn ({selectedStation.name}) lấy từ{' '}
+              {selectedStation.location.source}.
+            </p>
+          )}
+        </section>
+
+        <footer className="mt-8 flex flex-col justify-between gap-2 border-t border-slate-200 px-1 pt-5 text-xs text-slate-500 sm:flex-row">
+          <span>Mekong Monitor · Cổng thông tin dữ liệu quan trắc</span>
+          <span>
+            Demo lịch sử · Không đại diện cho cảnh báo hoặc số liệu thời gian
+            thực
+          </span>
+        </footer>
       </div>
-    </LoggedInLayout>
-  )
+    </main>
+  );
 }

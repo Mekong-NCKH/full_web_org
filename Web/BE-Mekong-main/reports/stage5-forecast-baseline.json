@@ -1,0 +1,324 @@
+{
+  "schema_version": 1,
+  "stage": "stage5-forecast-baseline",
+  "classification": "offline_research_evidence",
+  "source": {
+    "filename": "BaoDinh.csv",
+    "sha256": "cc9e1caabe4faec9b524af122618b8890fb1d7db35377475daed2a30af04af48",
+    "stations": [
+      "baodinh",
+      "gocat",
+      "vamkenh"
+    ],
+    "window_local": {
+      "from": "2024-06-01T00:00:00+07:00",
+      "to": "2024-07-31T23:59:59+07:00",
+      "timezone": "UTC+07:00"
+    },
+    "source_salinity_unit": "g/L",
+    "normalized_salinity_unit": "mg/L",
+    "water_level_unit": "m"
+  },
+  "runner": {
+    "filename": "stage5-forecast-baseline.py",
+    "sha256": "d72749c637f5253e062c77d1f872d676d6cb0831585c5868472d0de2b8ac6d5e"
+  },
+  "protocol": {
+    "data_rows_per_station": 1464,
+    "chronological_initial_history_fraction": 0.7,
+    "initial_history_end_at": "2024-07-13T15:00:00+07:00",
+    "holdout_start_at": "2024-07-13T16:00:00+07:00",
+    "horizon_hours": 24,
+    "origin_stride_hours": 24,
+    "origin_count_per_series": 18,
+    "unscored_holdout_tail_hours": 8,
+    "missing_values": "Preserved; no imputation; affected targets or predictions are excluded and counted.",
+    "metrics": [
+      "MAE",
+      "RMSE",
+      "bias"
+    ],
+    "bias_convention": "prediction_minus_observation",
+    "mape": "Not used because source values may be zero or negative.",
+    "model_training_performed": false,
+    "learned_parameters": []
+  },
+  "series": {
+    "baodinh": {
+      "salinity": {
+        "source_unit": "g/L",
+        "unit": "mg/L",
+        "data_quality": {
+          "row_count": 1464,
+          "numeric_count": 1464,
+          "missing_count": 0,
+          "zero_count": 33,
+          "negative_count": 106
+        },
+        "backtest": {
+          "evaluation_targets": 432,
+          "missing_targets": 0,
+          "origin_count": 18,
+          "test_window": {
+            "from": "2024-07-13T16:00:00+07:00",
+            "to": "2024-07-31T15:00:00+07:00"
+          },
+          "models": [
+            {
+              "name": "persistence",
+              "description": "Repeat the latest numeric observation at the forecast origin.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 70.501642,
+                "rmse": 93.672672,
+                "bias": 14.756402
+              }
+            },
+            {
+              "name": "daily_seasonal_naive_24h",
+              "description": "Use the observed value at the same hour on the previous day.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 59.421875,
+                "rmse": 83.052231,
+                "bias": 2.185708
+              }
+            }
+          ]
+        }
+      },
+      "water_level": {
+        "source_unit": "m",
+        "unit": "m",
+        "data_quality": {
+          "row_count": 1464,
+          "numeric_count": 1464,
+          "missing_count": 0,
+          "zero_count": 1,
+          "negative_count": 272
+        },
+        "backtest": {
+          "evaluation_targets": 432,
+          "missing_targets": 0,
+          "origin_count": 18,
+          "test_window": {
+            "from": "2024-07-13T16:00:00+07:00",
+            "to": "2024-07-31T15:00:00+07:00"
+          },
+          "models": [
+            {
+              "name": "persistence",
+              "description": "Repeat the latest numeric observation at the forecast origin.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 0.372488,
+                "rmse": 0.547446,
+                "bias": 0.066132
+              }
+            },
+            {
+              "name": "daily_seasonal_naive_24h",
+              "description": "Use the observed value at the same hour on the previous day.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 0.303347,
+                "rmse": 0.460928,
+                "bias": 0.000778
+              }
+            }
+          ]
+        }
+      }
+    },
+    "gocat": {
+      "salinity": {
+        "source_unit": "g/L",
+        "unit": "mg/L",
+        "data_quality": {
+          "row_count": 1464,
+          "numeric_count": 1464,
+          "missing_count": 0,
+          "zero_count": 90,
+          "negative_count": 337
+        },
+        "backtest": {
+          "evaluation_targets": 432,
+          "missing_targets": 0,
+          "origin_count": 18,
+          "test_window": {
+            "from": "2024-07-13T16:00:00+07:00",
+            "to": "2024-07-31T15:00:00+07:00"
+          },
+          "models": [
+            {
+              "name": "persistence",
+              "description": "Repeat the latest numeric observation at the forecast origin.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 445.906628,
+                "rmse": 614.154846,
+                "bias": 113.192356
+              }
+            },
+            {
+              "name": "daily_seasonal_naive_24h",
+              "description": "Use the observed value at the same hour on the previous day.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 346.937507,
+                "rmse": 498.744243,
+                "bias": 15.793758
+              }
+            }
+          ]
+        }
+      },
+      "water_level": {
+        "source_unit": "m",
+        "unit": "m",
+        "data_quality": {
+          "row_count": 1464,
+          "numeric_count": 1464,
+          "missing_count": 0,
+          "zero_count": 2,
+          "negative_count": 257
+        },
+        "backtest": {
+          "evaluation_targets": 432,
+          "missing_targets": 0,
+          "origin_count": 18,
+          "test_window": {
+            "from": "2024-07-13T16:00:00+07:00",
+            "to": "2024-07-31T15:00:00+07:00"
+          },
+          "models": [
+            {
+              "name": "persistence",
+              "description": "Repeat the latest numeric observation at the forecast origin.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 0.422105,
+                "rmse": 0.630243,
+                "bias": 0.063129
+              }
+            },
+            {
+              "name": "daily_seasonal_naive_24h",
+              "description": "Use the observed value at the same hour on the previous day.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 0.330715,
+                "rmse": 0.518284,
+                "bias": -0.00017
+              }
+            }
+          ]
+        }
+      }
+    },
+    "vamkenh": {
+      "salinity": {
+        "source_unit": "g/L",
+        "unit": "mg/L",
+        "data_quality": {
+          "row_count": 1464,
+          "numeric_count": 1464,
+          "missing_count": 0,
+          "zero_count": 0,
+          "negative_count": 20
+        },
+        "backtest": {
+          "evaluation_targets": 432,
+          "missing_targets": 0,
+          "origin_count": 18,
+          "test_window": {
+            "from": "2024-07-13T16:00:00+07:00",
+            "to": "2024-07-31T15:00:00+07:00"
+          },
+          "models": [
+            {
+              "name": "persistence",
+              "description": "Repeat the latest numeric observation at the forecast origin.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 3539.238441,
+                "rmse": 4853.037915,
+                "bias": 982.631025
+              }
+            },
+            {
+              "name": "daily_seasonal_naive_24h",
+              "description": "Use the observed value at the same hour on the previous day.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 3272.129449,
+                "rmse": 4617.106477,
+                "bias": 117.264375
+              }
+            }
+          ]
+        }
+      },
+      "water_level": {
+        "source_unit": "m",
+        "unit": "m",
+        "data_quality": {
+          "row_count": 1464,
+          "numeric_count": 1464,
+          "missing_count": 0,
+          "zero_count": 0,
+          "negative_count": 279
+        },
+        "backtest": {
+          "evaluation_targets": 432,
+          "missing_targets": 0,
+          "origin_count": 18,
+          "test_window": {
+            "from": "2024-07-13T16:00:00+07:00",
+            "to": "2024-07-31T15:00:00+07:00"
+          },
+          "models": [
+            {
+              "name": "persistence",
+              "description": "Repeat the latest numeric observation at the forecast origin.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 0.651834,
+                "rmse": 0.984591,
+                "bias": 0.012678
+              }
+            },
+            {
+              "name": "daily_seasonal_naive_24h",
+              "description": "Use the observed value at the same hour on the previous day.",
+              "predictions_unavailable_due_to_missing_input": 0,
+              "metrics": {
+                "n": 432,
+                "mae": 0.486515,
+                "rmse": 0.819406,
+                "bias": -0.001718
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "decision": {
+    "forecast_api_enabled": false,
+    "reason": "Persistence baselines are comparison references only. They do not establish an accepted forecasting model or operational forecast quality.",
+    "database_accessed": false,
+    "forecast_rows_written": false
+  }
+}

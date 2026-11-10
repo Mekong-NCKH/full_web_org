@@ -14,12 +14,15 @@ export default function SideLineChart({
   salinity = undefined,
   distanceKm = 2.5,
   color = '#0ea5e9',
-  
+
   // === PROP MỚI ĐƯỢC THÊM VÀO ===
   // Chỉ số của điểm cần tô vàng (ví dụ: 2)
-  highlightedIndex = -1, 
+  highlightedIndex = -1,
 }) {
-  const displayValue = (value === null || value === undefined) && (salinity !== undefined) ? salinity : value;
+  const displayValue =
+    (value === null || value === undefined) && salinity !== undefined
+      ? salinity
+      : value;
 
   const svg = useMemo(() => {
     const w = 240;
@@ -37,10 +40,16 @@ export default function SideLineChart({
     const x = (i: number) => padding.left + (i / Math.max(len - 1, 1)) * innerW;
     const y = (val: number) => padding.top + ((max - val) / range) * innerH;
 
-    const path = values.length > 0
-      ? values.map((v, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(2)} ${y(v).toFixed(2)}`).join(' ')
-      : '';
-      
+    const path =
+      values.length > 0
+        ? values
+            .map(
+              (v, i) =>
+                `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(2)} ${y(v).toFixed(2)}`,
+            )
+            .join(' ')
+        : '';
+
     // Tính toán tọa độ các điểm
     const points = values.map((v, i) => ({
       cx: x(i),
@@ -51,21 +60,35 @@ export default function SideLineChart({
   }, [data]);
 
   return (
-    <div className="flex items-stretch overflow-hidden rounded-lg bg-white shadow-sm" style={{ minHeight: '100px' }}>
+    <div
+      className="flex items-stretch overflow-hidden rounded-lg bg-white shadow-sm"
+      style={{ minHeight: '100px' }}
+    >
       {/* Left side: Point info */}
-      <div className="flex flex-col justify-center border-r border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 px-4 py-3" style={{ minWidth: '180px' }}>
-        <div className="mb-1 text-sm font-semibold text-gray-700">{pointName}</div>
+      <div
+        className="flex flex-col justify-center border-r border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 px-4 py-3"
+        style={{ minWidth: '180px' }}
+      >
+        <div className="mb-1 text-sm font-semibold text-gray-700">
+          {pointName}
+        </div>
         <div className="flex items-center gap-1 text-xs text-gray-600">
-          <span className="font-medium">{measurementType === 'depth' ? 'Mực nước:' : 'Độ mặn:'}</span>
-          <span className="font-semibold text-blue-700">{
-            (displayValue === null || displayValue === undefined || Number.isNaN(Number(displayValue)))
+          <span className="font-medium">
+            {measurementType === 'depth' ? 'Mực nước:' : 'Độ mặn:'}
+          </span>
+          <span className="font-semibold text-blue-700">
+            {displayValue === null ||
+            displayValue === undefined ||
+            Number.isNaN(Number(displayValue))
               ? '—'
-              : `${Number(displayValue).toFixed(2)} ${measurementType === 'depth' ? 'm' : 'g/l'}`
-          }</span>
+              : `${Number(displayValue).toFixed(2)} ${measurementType === 'depth' ? 'm' : 'mg/L'}`}
+          </span>
         </div>
         <div className="mt-1 flex items-center gap-1 text-xs text-gray-600">
           <span className="font-medium">Khoảng cách:</span>
-          <span className="font-semibold text-blue-700">{distanceKm.toFixed(1)} km</span>
+          <span className="font-semibold text-blue-700">
+            {distanceKm.toFixed(1)} km
+          </span>
         </div>
       </div>
 
@@ -80,13 +103,21 @@ export default function SideLineChart({
         >
           {/* ... (grid line, path) ... */}
           <line
-            x1={12} y1={svg.h / 2} x2={svg.w - 12} y2={svg.h / 2}
-            stroke="#e5e7eb" strokeWidth={1} strokeDasharray="4 2"
+            x1={12}
+            y1={svg.h / 2}
+            x2={svg.w - 12}
+            y2={svg.h / 2}
+            stroke="#e5e7eb"
+            strokeWidth={1}
+            strokeDasharray="4 2"
           />
           <path
             d={svg.path}
-            fill="none" stroke={color} strokeWidth={2.5}
-            strokeLinecap="round" strokeLinejoin="round"
+            fill="none"
+            stroke={color}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
           />
 
           {/* Small point markers */}
@@ -95,12 +126,17 @@ export default function SideLineChart({
             if (i === highlightedIndex) return null;
             return (
               <circle
-                key={i} cx={p.cx} cy={p.cy} r={3}
-                fill={color} stroke="#fff" strokeWidth={1}
+                key={i}
+                cx={p.cx}
+                cy={p.cy}
+                r={3}
+                fill={color}
+                stroke="#fff"
+                strokeWidth={1}
               />
             );
           })}
-          
+
           {/* ===>>> ĐIỂM HIGHLIGHT MÀU VÀNG (ĐÃ THÊM) <<<=== */}
           {highlightedIndex !== -1 && svg.points[highlightedIndex] && (
             <circle

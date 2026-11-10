@@ -18,7 +18,7 @@ export class PositionDataOrmEntity {
   @Column({ name: 'water_level', type: 'double precision', nullable: true })
   waterLevel: number;
 
-  @ManyToOne(() => PositionOrmEntity, position => position.data)
+  @ManyToOne(() => PositionOrmEntity, (position) => position.data)
   @JoinColumn({ name: 'station_id' })
   position: PositionOrmEntity;
 }
