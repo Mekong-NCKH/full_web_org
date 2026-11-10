@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
   merge_group:
     types: [checks_requested]
 
@@ -81,7 +82,11 @@ jobs:
     name: deploy-production
     runs-on: ubuntu-latest
     needs: [frontend, backend]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.VERCEL_DEPLOY_ENABLED == 'true'
+    # Allow manual runs only from main; feature-branch dispatches are CI-only.
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main' &&
+      vars.VERCEL_DEPLOY_ENABLED == 'true'
     environment: production
     permissions:
       contents: read
