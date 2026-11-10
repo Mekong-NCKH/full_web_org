@@ -114,6 +114,8 @@ jobs:
         run: npm install --global vercel@latest
       - name: Deploy backend
         working-directory: Web/BE-Mekong-main
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
         run: |
           mkdir -p .vercel
           node -e 'require("node:fs").writeFileSync(".vercel/project.json", JSON.stringify({orgId: process.env.VERCEL_ORG_ID, projectId: process.env.VERCEL_BACKEND_PROJECT_ID}))'
@@ -122,6 +124,8 @@ jobs:
           vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
       - name: Deploy frontend
         working-directory: Web
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_FRONTEND_PROJECT_ID }}
         run: |
           mkdir -p .vercel
           node -e 'require("node:fs").writeFileSync(".vercel/project.json", JSON.stringify({orgId: process.env.VERCEL_ORG_ID, projectId: process.env.VERCEL_FRONTEND_PROJECT_ID}))'
