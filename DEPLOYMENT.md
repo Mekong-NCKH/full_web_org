@@ -43,7 +43,7 @@ After adding or changing environment variables, create a new deployment so both 
 
 ## CI and production deploy
 
-`.github/workflows/ci.yml` runs on pull requests, pushes to `main`, and merge-queue checks. The `frontend` and `backend` jobs are the required checks. The backend job uses a disposable PostgreSQL 17 service, runs controller and API integration tests, verifies the demo CSV, then builds.
+`.github/workflows/ci.yml` runs on pull requests, pushes to `main`, manual dispatches, and merge-queue checks. The `frontend` and `backend` jobs are the required checks. The backend job uses a disposable PostgreSQL 17 service, runs controller and API integration tests, verifies the demo CSV, then builds.
 
 Production deployment is opt-in. In GitHub repository settings, add these **Actions secrets**:
 
@@ -61,18 +61,13 @@ Also add these repository **Actions variables** for the post-deploy smoke test:
 
 After deployment, CI checks the frontend responds and verifies `/api/v1/status`, `/api/v1/stations`, and `/api/v1/metadata/data-range`, including the three public station IDs.
 
-For a manual deploy, run `npx vercel link` once from each project root (`Web` and `Web/BE-Mekong-main`), then use `npm run deploy:preview` or `npm run deploy:prod` from that root. The CLI reads environment values from the linked Vercel project.
+For an on-demand production deploy, open **Actions > CI > Run workflow**, select `main`, and start the workflow. Both CI jobs must pass, the `production` environment must allow `main`, and `VERCEL_DEPLOY_ENABLED` must be `true` before `deploy-production` runs. A dispatch from any other branch cannot deploy production. For local deployments, run `npx vercel link` once from each project root (`Web` and `Web/BE-Mekong-main`), then use `npm run deploy:preview` or `npm run deploy:prod` from that root.
 
 ## Require pull requests and passing checks
 
-In GitHub, open **Settings > Rules > Rulesets**, create a branch ruleset targeting `main`, and enable:
+The `main` ruleset requires pull requests, the `frontend` and `backend` checks, an up-to-date branch, resolved conversations, and blocks force pushes and branch deletion. Required approvals are currently set to zero for this single-developer repository; re-enable one approval when an independent reviewer is available. Do not require `deploy-production` as a PR check because it only runs on `main` after CI passes and deployment is enabled.
 
-1. Require pull requests, one approval, dismissal of stale approvals, and approval of the latest reviewable push.
-2. Require status checks `frontend` and `backend`, with the branch up to date before merging.
-3. Require conversation resolution; block force pushes and branch deletion.
-4. Limit bypass to designated repository administrators for emergency recovery.
-
-Do not include `deploy-production` as a required check because it is intentionally skipped for pull requests and when deployment is disabled.
+When a second maintainer joins, enable one approval, dismiss stale approvals, and require approval of the latest reviewable push. Limit bypass to designated repository administrators for emergency recovery.
 
 In **Settings > Environments > production**, restrict deployments to `main` and require an environment reviewer when a second maintainer is available. The workflow already targets this environment.
 
@@ -102,4 +97,4 @@ The Stage 7 gate audits Phase 5/6 source lineage, checkpoint hashes, matched hol
 
 ## Current boundary
 
-The Neon CLI linked the configured `production` branch and `neon deploy` confirmed it already matched the Postgres policy. The local rebuild subsequently completed: 4,392 observations for `baodinh`, `gocat`, and `vamkenh` across June-July 2024 were applied. A local run also confirmed that the API starts and that `/api/v1/status`, `/api/v1/stations`, and `/api/v1/metadata/data-range` respond successfully. GitHub branch protections and Vercel project settings remain account-level configuration steps. Never place a Neon URL in GitHub Actions logs or source files.
+The Neon production branch contains the 4,392 public observations for `baodinh`, `gocat`, and `vamkenh` across June–July 2024. The Vercel projects use the `Web` and `Web/BE-Mekong-main` roots, and production environment variables are configured in their respective projects. GitHub Actions holds the Vercel credential and project IDs as secrets and the production URLs and deploy gate as repository variables. The `production` GitHub environment is restricted to `main`. Never place a Neon URL in GitHub Actions logs or source files.
