@@ -9,7 +9,7 @@ Use two Vercel projects from this repository:
 | Frontend | `Web`                | Vite SPA with fallback |
 | Backend  | `Web/BE-Mekong-main` | NestJS serverless API  |
 
-Set the backend project's install/build settings to the package scripts (`npm ci` and `npm run build`). The frontend `vercel.json` enables direct navigation to SPA routes; the backend project includes its own `vercel.json` and `api/index.ts`.
+The backend project uses `npm ci --include=dev` during its Vercel build so the Nest CLI in `devDependencies` is available for `npm run build`, including when the Production environment sets `NODE_ENV=production`. The frontend `vercel.json` enables direct navigation to SPA routes; the backend project includes its own `vercel.json` and `api/index.ts`.
 
 ## Neon provisioning
 
