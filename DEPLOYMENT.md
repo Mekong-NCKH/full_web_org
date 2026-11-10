@@ -61,7 +61,7 @@ Also add these repository **Actions variables** for the post-deploy smoke test:
 
 After deployment, CI checks the frontend responds and verifies `/api/v1/status`, `/api/v1/stations`, and `/api/v1/metadata/data-range`, including the three public station IDs.
 
-For an on-demand production deploy, open **Actions > CI > Run workflow**, select `main`, and start the workflow. Both CI jobs must pass, the `production` environment must allow `main`, and `VERCEL_DEPLOY_ENABLED` must be `true` before `deploy-production` runs. A dispatch from any other branch cannot deploy production. For local deployments, run `npx vercel link` once from each project root (`Web` and `Web/BE-Mekong-main`), then use `npm run deploy:preview` or `npm run deploy:prod` from that root.
+For an on-demand production deploy, open **Actions > CI > Run workflow**, select `main`, and start the workflow. Both CI jobs must pass, the `production` environment must allow `main`, and `VERCEL_DEPLOY_ENABLED` must be `true` before `deploy-production` runs. A dispatch from any other branch cannot deploy production. Use this after changing production environment variables; Vercel needs a new deployment for those values to take effect. For local deployments, run `npx vercel link` once from each project root (`Web` and `Web/BE-Mekong-main`), then use `npm run deploy:preview` or `npm run deploy:prod` from that root.
 
 ## Require pull requests and passing checks
 
