@@ -1,6 +1,8 @@
 import type {
   ApiEnvelope,
   DataRange,
+  GISReferenceRuleSet,
+  GISReferenceRuleSetResponse,
   Observation,
   ObservationSeriesResponse,
   SnapshotResponse,
@@ -9,6 +11,7 @@ import type {
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
 const apiBaseUrl = configuredBaseUrl.replace(/\/+$/, '');
+export const SNAPSHOT_MAX_AGE_HOURS = 6;
 
 async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -54,11 +57,24 @@ export async function fetchSnapshot(
   at: Date,
   signal?: AbortSignal,
 ): Promise<SnapshotResponse> {
-  const query = new URLSearchParams({ at: at.toISOString(), maxAgeHours: '6' });
+  const query = new URLSearchParams({
+    at: at.toISOString(),
+    maxAgeHours: String(SNAPSHOT_MAX_AGE_HOURS),
+  });
   return getJson<SnapshotResponse>(
     `/api/v1/observations/snapshot?${query.toString()}`,
     signal,
   );
+}
+
+export async function fetchGISReferenceRules(
+  signal?: AbortSignal,
+): Promise<GISReferenceRuleSet> {
+  const response = await getJson<GISReferenceRuleSetResponse>(
+    '/api/v1/gis/reference-rules',
+    signal,
+  );
+  return response.data;
 }
 
 export async function fetchObservationSeries(

@@ -133,6 +133,14 @@ The application source declares the following HTTP routes; route-level responses
 
 The Phase 1 demo importer is intentionally separate from app startup. Run `npm run data:demo:check` for a dry run. `npm run data:demo:rebuild` replaces only the monitoring tables and requires the documented explicit confirmation. It loads BaoDinh.csv for June-July 2024, publishes only the three coordinate-confirmed stations, converts source salinity from g/L to mg/L, and keeps water level in meters. See the [API contract](Web/BE-Mekong-main/docs/monitoring-api-v1.md) before applying it.
 
+Phase 2 adds a reviewed schema migration for source provenance, raw source fields, model versions and run outputs, and monitoring thresholds. Run `npm run data:phase2:check` before loading. Its import is idempotent and does not truncate or change station metadata. See the [Phase 2 data-platform guide](Web/BE-Mekong-main/docs/phase2-data-platform.md); forecast and imputation results remain unavailable until later model and API integration work.
+
+Stage 5 adds an offline, chronological backtest of persistence and daily seasonal-naive forecast baselines on the approved June–July 2024 data. It preserves missing, zero, and negative measurements and does not enable public forecast responses. See the [Stage 5 forecast pipeline guide](Web/BE-Mekong-main/docs/stage5-forecast-pipeline.md) and [baseline report](Web/BE-Mekong-main/reports/stage5-forecast-baseline.json).
+
+Phase 6 runs an offline Time-Series-Library DLinear experiment against the Phase 5 baselines. It records training history and model artifacts while leaving public forecast routes disabled. See the [Phase 6 experiment guide](Web/BE-Mekong-main/docs/phase6-tslib-experiment.md) and [report](Web/BE-Mekong-main/reports/stage6-dlinear-experiment.json).
+
+Phase 7 adds an auditable promotion gate for forecasting evidence. Its current decision is HOLD because DLinear bias is worse than the daily baseline and independent-season validation and owner-approved thresholds are missing. Public forecast routes remain disabled. See the [Phase 7 guide](Web/BE-Mekong-main/docs/phase7-forecast-promotion.md) and [promotion report](Web/BE-Mekong-main/reports/stage7-forecast-promotion.json).
+
 ### 3. Web frontend
 
 ```bash

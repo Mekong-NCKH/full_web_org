@@ -14,24 +14,30 @@ import {
 
 import {
   fetchDataRange,
+  fetchGISReferenceRules,
   fetchObservationHistory,
   fetchSnapshot,
   fetchStations,
   latestObservationAtOrBefore,
+  SNAPSHOT_MAX_AGE_HOURS,
 } from '@/services/monitoring-api';
 import type {
   DataRange,
+  GISReferenceStatus,
+  GISReferenceRuleSet,
   Observation,
+  SelectedStationReading,
   SnapshotResponse,
   Station,
 } from '@/types/monitoring.type';
+
+import { evaluateGISReferenceRule } from './gis-reference';
 
 const InteractiveMap = lazy(() => import('./components/interactive-map'));
 
 export const Route = createFileRoute('/home/')({ component: RouteComponent });
 
 const chartColors = ['#0f766e', '#2563eb', '#db4961'];
-const historyHours = 6;
 
 function formatDateTime(value: string | Date | null): string {
   if (!value) return '—';
@@ -63,20 +69,35 @@ function formatMeasurement(
   return `${value.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ${unit}`;
 }
 
-function getSalinityTone(value: number | null): {
+function getObservationTone(
+  reading: SelectedStationReading,
+  loading: boolean,
+): {
   label: string;
   className: string;
 } {
-  if (value === null)
+  if (loading && reading.freshness === 'missing')
     return {
-      label: 'Chưa có số liệu',
+      label: 'Đang tải',
       className: 'bg-slate-100 text-slate-600',
     };
-  if (value >= 4000)
-    return { label: 'Độ mặn cao', className: 'bg-rose-50 text-rose-700' };
-  if (value >= 1000)
-    return { label: 'Cần theo dõi', className: 'bg-amber-50 text-amber-800' };
-  return { label: 'Độ mặn thấp', className: 'bg-emerald-50 text-emerald-700' };
+  if (reading.freshness === 'missing')
+    return {
+      label: 'Không có số liệu',
+      className: 'bg-slate-100 text-slate-600',
+    };
+  if (reading.freshness === 'stale')
+    return {
+      label: 'Bản ghi cũ',
+      className: 'bg-amber-50 text-amber-800',
+    };
+  return {
+    label:
+      reading.observation?.quality === 'unverified'
+        ? 'Chưa xác minh'
+        : 'Có số liệu',
+    className: 'bg-slate-100 text-slate-700',
+  };
 }
 
 function Icon({ kind }: { kind: 'wave' | 'pin' | 'clock' | 'drop' | 'water' }) {
@@ -152,6 +173,7 @@ function ChartPanel({
   stations,
   metric,
   selectedAt,
+  loading,
 }: {
   title: string;
   description: string;
@@ -159,6 +181,7 @@ function ChartPanel({
   stations: Station[];
   metric: 'salinity' | 'waterLevel';
   selectedAt: Date | null;
+  loading: boolean;
 }) {
   const unit = metric === 'salinity' ? 'mg/L' : 'm';
   return (
@@ -173,8 +196,13 @@ function ChartPanel({
         </span>
       </div>
       {data.length === 0 ? (
-        <div className="grid h-56 place-items-center rounded-xl bg-slate-50 text-sm text-slate-500">
-          Đang chờ dữ liệu lịch sử từ API.
+        <div
+          role="status"
+          className="grid h-56 place-items-center rounded-xl bg-slate-50 text-sm text-slate-500"
+        >
+          {loading
+            ? 'Đang tải dữ liệu lịch sử từ API…'
+            : 'Không có dữ liệu lịch sử trong khoảng thời gian này.'}
         </div>
       ) : (
         <div className="h-64 w-full">
@@ -259,6 +287,13 @@ function RouteComponent() {
   );
   const [history, setHistory] = useState<Record<string, Observation[]>>({});
   const [selectedAt, setSelectedAt] = useState<Date | null>(null);
+  const [dataMode, setDataMode] = useState<'historical' | 'replay'>(
+    'historical',
+  );
+  const [isReplaying, setIsReplaying] = useState(false);
+  const [referenceRuleSet, setReferenceRuleSet] =
+    useState<GISReferenceRuleSet | null>(null);
+  const [referenceRulesLoading, setReferenceRulesLoading] = useState(true);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(
     null,
   );
@@ -356,7 +391,7 @@ function RouteComponent() {
   const observationsAtSelection = useMemo(() => {
     const selectedTime = selectedAt?.getTime();
     if (selectedTime === undefined || !selectedAt)
-      return {} as Record<string, Observation | null>;
+      return {} as Record<string, SelectedStationReading>;
 
     const latestAtWindowEnd = dataRange?.to
       ? new Date(dataRange.to).getTime() === selectedTime
@@ -367,19 +402,37 @@ function RouteComponent() {
     );
     return Object.fromEntries(
       stations.map((station) => {
+        const historicalObservation = latestObservationAtOrBefore(
+          history[station.id] ?? [],
+          selectedAt,
+        );
         const observation = latestAtWindowEnd
-          ? (snapshotById.get(station.id) ?? null)
-          : latestObservationAtOrBefore(history[station.id] ?? [], selectedAt);
-        if (!observation) return [station.id, null];
-        const ageMs = selectedTime - new Date(observation.observedAt).getTime();
+          ? (snapshotById.get(station.id) ?? historicalObservation)
+          : historicalObservation;
+        if (!observation)
+          return [
+            station.id,
+            { observation: null, freshness: 'missing' },
+          ];
+        const observedAt = new Date(observation.observedAt).getTime();
+        if (!Number.isFinite(observedAt) || observedAt > selectedTime)
+          return [
+            station.id,
+            { observation: null, freshness: 'missing' },
+          ];
+        const ageMs = selectedTime - observedAt;
         return [
           station.id,
-          ageMs >= 0 && ageMs <= historyHours * 60 * 60 * 1000
-            ? observation
-            : null,
+          {
+            observation,
+            freshness:
+              ageMs <= SNAPSHOT_MAX_AGE_HOURS * 60 * 60 * 1000
+                ? 'fresh'
+                : 'stale',
+          },
         ];
       }),
-    ) as Record<string, Observation | null>;
+    ) as Record<string, SelectedStationReading>;
   }, [dataRange, history, latestSnapshot, selectedAt, stations]);
 
   const chartData = useMemo(() => {
@@ -398,6 +451,57 @@ function RouteComponent() {
       String(left.at).localeCompare(String(right.at)),
     );
   }, [history, stations]);
+
+  const replayTimes = useMemo(
+    () =>
+      chartData
+        .map((point) => new Date(String(point.at)).getTime())
+        .filter((time) => Number.isFinite(time)),
+    [chartData],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchGISReferenceRules(controller.signal)
+      .then(setReferenceRuleSet)
+      .catch(() => {
+        if (!controller.signal.aborted) setReferenceRuleSet(null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setReferenceRulesLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!isReplaying || !selectedAt || replayTimes.length === 0) return;
+    const timer = window.setTimeout(() => {
+      const nextTime = replayTimes.find(
+        (time) => time > selectedAt.getTime(),
+      );
+      if (nextTime === undefined) {
+        setIsReplaying(false);
+        return;
+      }
+      setSelectedAt(new Date(nextTime));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [isReplaying, replayTimes, selectedAt]);
+
+  const referenceStatuses = useMemo(
+    () =>
+      Object.fromEntries(
+        stations.map((station) => [
+          station.id,
+          evaluateGISReferenceRule(
+            referenceRuleSet,
+            station.id,
+            observationsAtSelection[station.id]?.observation ?? null,
+          ),
+        ]),
+      ) as Record<string, GISReferenceStatus>,
+    [observationsAtSelection, referenceRuleSet, stations],
+  );
 
   const salinityChartData = useMemo(
     () =>
@@ -474,7 +578,9 @@ function RouteComponent() {
             </a>
           </nav>
           <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-amber-800">
-            BẢN DEMO LỊCH SỬ
+            {dataMode === 'replay'
+              ? 'PHÁT LẠI DỮ LIỆU LỊCH SỬ'
+              : 'BẢN DEMO LỊCH SỬ'}
           </span>
         </div>
       </header>
@@ -602,8 +708,14 @@ function RouteComponent() {
                 <InteractiveMap
                   stations={stations}
                   observations={observationsAtSelection}
+                  referenceStatuses={referenceStatuses}
+                  ruleSetVersion={referenceRuleSet?.version ?? null}
+                  dataMode={dataMode}
                   selectedStationId={selectedStationId}
                   onStationSelect={setSelectedStationId}
+                  loading={loading}
+                  loadError={Boolean(error && stations.length === 0)}
+                  readingLoading={historyLoading}
                 />
               </Suspense>
             </div>
@@ -631,6 +743,55 @@ function RouteComponent() {
               >
                 Chọn thời điểm trong dữ liệu
               </label>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReplaying(false);
+                    setDataMode('historical');
+                  }}
+                  aria-pressed={dataMode === 'historical'}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${dataMode === 'historical' ? 'border-teal-700 bg-teal-50 text-teal-900' : 'border-slate-200 bg-white text-slate-600'}`}
+                >
+                  Lịch sử
+                </button>
+                <button
+                  type="button"
+                  disabled={historyLoading || replayTimes.length === 0}
+                  onClick={() => {
+                    setDataMode('replay');
+                    if (
+                      !selectedAt ||
+                      selectedAt.getTime() >=
+                        replayTimes[replayTimes.length - 1]
+                    ) {
+                      setSelectedAt(new Date(replayTimes[0]));
+                    }
+                    setIsReplaying(true);
+                  }}
+                  className="rounded-lg border border-teal-700 bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Phát lại
+                </button>
+                <button
+                  type="button"
+                  disabled={!isReplaying}
+                  onClick={() => setIsReplaying(false)}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Tạm dừng
+                </button>
+                <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                  Live: chưa cấu hình
+                </span>
+                <span className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                  Forecast: chưa cấu hình
+                </span>
+              </div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                Replay phát tuần tự các quan trắc lịch sử theo thời gian. Đây là
+                mô phỏng, không phải luồng dữ liệu trực tiếp.
+              </p>
               <input
                 id="demo-time"
                 className="mt-3 h-2 w-full cursor-pointer accent-teal-700"
@@ -640,9 +801,11 @@ function RouteComponent() {
                 step={60 * 60 * 1000}
                 value={selectedAt?.getTime() ?? 0}
                 disabled={!dataRange?.from || !dataRange.to || loading}
-                onChange={(event) =>
-                  setSelectedAt(new Date(Number(event.target.value)))
-                }
+                onChange={(event) => {
+                  setIsReplaying(false);
+                  setDataMode('historical');
+                  setSelectedAt(new Date(Number(event.target.value)));
+                }}
               />
               <div className="mt-2 flex justify-between text-[11px] text-slate-500">
                 <span>
@@ -664,11 +827,34 @@ function RouteComponent() {
                   </div>
                 ) : (
                   stations.map((station) => {
-                    const observation =
-                      observationsAtSelection[station.id] ?? null;
+                    const reading = observationsAtSelection[station.id] ?? {
+                      observation: null,
+                      freshness: 'missing',
+                    };
+                    const observation = reading.observation;
                     const salinity = observation?.salinity.value ?? null;
-                    const tone = getSalinityTone(salinity);
+                    const referenceStatus = referenceStatuses[station.id];
+                    const tone = getObservationTone(
+                      reading,
+                      historyLoading,
+                    );
                     const active = station.id === selectedStationId;
+                    const freshnessNote =
+                      reading.freshness === 'stale'
+                        ? ` · cách thời điểm chọn hơn ${SNAPSHOT_MAX_AGE_HOURS} giờ`
+                        : '';
+                    const recordLabel =
+                      reading.freshness === 'stale'
+                        ? 'Bản ghi cũ'
+                        : 'Bản ghi';
+                    const recordTimestamp = observation
+                      ? formatDateTime(observation.observedAt)
+                      : null;
+                    const recordDescription = recordTimestamp
+                      ? `${recordLabel}: ${recordTimestamp}${freshnessNote}`
+                      : historyLoading
+                        ? 'Đang tải số liệu lịch sử…'
+                        : 'Không có bản ghi trước thời điểm đã chọn';
                     return (
                       <button
                         key={station.id}
@@ -708,10 +894,31 @@ function RouteComponent() {
                           </div>
                         </div>
                         <p className="mt-3 text-[10px] text-slate-500">
-                          {observation
-                            ? `Bản ghi: ${formatDateTime(observation.observedAt)}`
-                            : 'Không có bản ghi trong 6 giờ gần thời điểm này'}
+                          {recordDescription}
                         </p>
+                        <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-indigo-800">
+                              Mô phỏng tham khảo v
+                              {referenceRuleSet?.version ?? '…'}
+                            </span>
+                            <span className="text-xs font-semibold text-indigo-950">
+                              {referenceStatus?.label ??
+                                (referenceRulesLoading
+                                  ? 'Đang tải quy tắc'
+                                  : 'Không có kết quả')}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[10px] leading-4 text-indigo-800">
+                            Chưa xác nhận vận hành; không phải trạng thái thực
+                            tế của cửa.
+                          </p>
+                          {referenceStatus?.basis && (
+                            <p className="mt-1 text-[10px] leading-4 text-indigo-700">
+                              Căn cứ: {referenceStatus.basis}
+                            </p>
+                          )}
+                        </div>
                       </button>
                     );
                   })
@@ -745,6 +952,7 @@ function RouteComponent() {
               stations={stations}
               metric="salinity"
               selectedAt={selectedAt}
+              loading={historyLoading}
             />
             <ChartPanel
               title="Mực nước"
@@ -753,6 +961,7 @@ function RouteComponent() {
               stations={stations}
               metric="waterLevel"
               selectedAt={selectedAt}
+              loading={historyLoading}
             />
           </div>
         </section>

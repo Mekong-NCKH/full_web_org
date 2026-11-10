@@ -22,6 +22,12 @@ describe('monitoring API', () => {
     latitude: 10.388921,
     longitude: 106.341713,
   };
+  const vamkenhStation = {
+    id: 'vamkenh',
+    name: 'Vam Kenh',
+    latitude: 10.283028,
+    longitude: 106.738487,
+  };
   const observation = {
     id: 'o1',
     station_id: 'gocat',
@@ -112,6 +118,109 @@ describe('monitoring API', () => {
       unit: 'm',
       reference: 'sea_level',
     });
+  });
+
+  it('publishes only the versioned rules for approved public stations', async () => {
+    const response = await request(getServer())
+      .get('/api/v1/gis/reference-rules')
+      .expect(200);
+    const body = response.body as {
+      data: {
+        id: string;
+        version: string;
+        confirmationStatus: string;
+        intendedUse: string;
+        rules: Array<{ stationId: string }>;
+      };
+    };
+
+    expect(body.data).toMatchObject({
+      id: 'mekong-legacy-gis-reference',
+      version: '1.0.0',
+      confirmationStatus: 'unconfirmed',
+      intendedUse: 'reference_simulation_only',
+    });
+    expect(body.data.rules.map((rule) => rule.stationId)).toEqual([
+      'baodinh',
+      'gocat',
+      'vamkenh',
+    ]);
+  });
+
+  it('evaluates historical reference status without exposing private stations', async () => {
+    const previousStart = process.env.PUBLIC_DATA_START;
+    const previousEnd = process.env.PUBLIC_DATA_END;
+    process.env.PUBLIC_DATA_START = '2024-06-01T00:00:00+07:00';
+    process.env.PUBLIC_DATA_END = '2024-07-31T23:59:59+07:00';
+    repo.getSnapshot.mockResolvedValueOnce([
+      { station, observation },
+      { station: stationWithoutReading, observation: null },
+      {
+        station: vamkenhStation,
+        observation: {
+          ...observation,
+          id: 'o2',
+          station_id: 'vamkenh',
+          salinity: 1800,
+        },
+      },
+      {
+        station: { ...station, id: 'giathuan', name: 'Gia Thuan' },
+        observation,
+      },
+    ]);
+
+    try {
+      const response = await request(getServer())
+        .get('/api/v1/gis/reference-status')
+        .query({ at: '2024-06-15T07:00:00+07:00', mode: 'replay' })
+        .expect(200);
+      const body = response.body as {
+        mode: string;
+        dataKind: string;
+        source: string;
+        ruleSet: { version: string; confirmationStatus: string };
+        data: Array<{
+          station: { id: string };
+          referenceStatus: { code: string; thresholdMgL?: number };
+        }>;
+      };
+
+      expect(body).toMatchObject({
+        mode: 'replay',
+        dataKind: 'observed',
+        source: 'BaoDinh.csv',
+        ruleSet: { version: '1.0.0', confirmationStatus: 'unconfirmed' },
+      });
+      expect(body.data.map((row) => row.station.id).sort()).toEqual([
+        'baodinh',
+        'gocat',
+        'vamkenh',
+      ]);
+      expect(
+        body.data.find((row) => row.station.id === 'vamkenh')?.referenceStatus,
+      ).toMatchObject({
+        code: 'close_for_storage',
+        thresholdMgL: 1500,
+      });
+      expect(repo.getSnapshot).toHaveBeenCalledWith(
+        new Date('2024-06-15T00:00:00.000Z'),
+        new Date('2024-05-31T17:00:00.000Z'),
+      );
+    } finally {
+      if (previousStart === undefined) delete process.env.PUBLIC_DATA_START;
+      else process.env.PUBLIC_DATA_START = previousStart;
+      if (previousEnd === undefined) delete process.env.PUBLIC_DATA_END;
+      else process.env.PUBLIC_DATA_END = previousEnd;
+    }
+  });
+
+  it('rejects live and forecast as GIS reference modes', async () => {
+    await request(getServer())
+      .get('/api/v1/gis/reference-status')
+      .query({ at: '2024-06-15T00:00:00Z', mode: 'live' })
+      .expect(400);
+    expect(repo.getSnapshot).not.toHaveBeenCalled();
   });
 
   it.each([

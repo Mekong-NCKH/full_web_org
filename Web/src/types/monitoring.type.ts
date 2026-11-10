@@ -21,6 +21,11 @@ export type Observation = {
   quality: 'unverified' | string;
 };
 
+export type SelectedStationReading = {
+  observation: Observation | null;
+  freshness: 'fresh' | 'stale' | 'missing';
+};
+
 export type StationSnapshot = {
   station: Station;
   observation: Observation | null;
@@ -52,4 +57,61 @@ export type ObservationSeriesResponse = {
   limit: number;
   truncated: boolean;
   data: Observation[];
+};
+
+export type GISReferenceStatus = {
+  code: 'unknown' | 'open_to_flow' | 'close_for_storage' | 'monitor';
+  label: string;
+  basis: string;
+  thresholdMgL?: number;
+};
+
+export type GISReferenceRule =
+  | {
+      stationId: string;
+      kind: 'fixed';
+      result: 'open_to_flow';
+      label: string;
+    }
+  | {
+      stationId: string;
+      kind: 'threshold';
+      comparison: 'gt';
+      sourceThreshold: number;
+      thresholdMgL: number;
+      aboveThreshold: 'close_for_storage';
+      aboveThresholdLabel: string;
+      atOrBelowThreshold: 'monitor';
+      atOrBelowThresholdLabel: string;
+    };
+
+export type GISReferenceRuleSet = {
+  id: string;
+  version: string;
+  confirmationStatus: 'unconfirmed' | string;
+  intendedUse: string;
+  sourceFiles: string[];
+  sourceSalinityUnit: 'g/L' | string;
+  normalizedSalinityUnit: 'mg/L' | string;
+  rules: GISReferenceRule[];
+  limitations: string[];
+};
+
+export type GISReferenceRuleSetResponse = {
+  success: boolean;
+  data: GISReferenceRuleSet;
+};
+
+export type GISReferenceStatusResponse = {
+  success: boolean;
+  mode: 'historical' | 'replay';
+  asOf: string;
+  dataKind: 'observed';
+  source: string;
+  ruleSet: GISReferenceRuleSet;
+  data: Array<{
+    station: Station;
+    observation: Observation | null;
+    referenceStatus: GISReferenceStatus;
+  }>;
 };

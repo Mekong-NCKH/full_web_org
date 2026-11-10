@@ -29,7 +29,7 @@ Configure these in the Vercel project dashboards. Do not commit credentials or p
 
 **Backend project**
 
-- `DATABASE_URL`: a newly rotated Neon PostgreSQL connection string.
+- `DATABASE_URL`: a Neon pooled connection string (host includes `-pooler`) for the Vercel serverless runtime. Use a direct, unpooled connection only for schema migrations.
 - `PUBLIC_DATA_START=2024-06-01T00:00:00+07:00`
 - `PUBLIC_DATA_END=2024-07-31T23:59:59+07:00`
 - `CORS_ORIGINS`: the exact production frontend origin, without a trailing slash.
@@ -80,6 +80,26 @@ In **Settings > Environments > production**, restrict deployments to `main` and 
 
 The checked-in CSV dry-run reports the selected Bao Dinh source, the three coordinate-verified public stations, and June–July 2024 row counts. To rebuild Neon, first rotate any connection string that was shared in chat. Then use the new value only as a local `DATABASE_URL` environment variable. Review `Web/BE-Mekong-main/docs/monitoring-api-v1.md` and the import script before applying. The rebuild requires an explicit confirmation variable and truncates only the two monitoring tables; it does not delete unrelated database tables.
 
+## Phase 2 provenance schema and import
+
+Phase 2 adds source import records, source-level observation fields, model version/run/result tables, and station monitoring rules. It does not create forecasts, fill missing observed values, enable alert delivery, or change the public API. Review `Web/BE-Mekong-main/docs/phase2-data-platform.md` and the migration SQL directly. Run `npm run data:phase2:check` before loading; it validates the import offline. The schema apply is additive and guarded. The separate data load is transactional and idempotent, and it does not truncate rows or change station coordinates. Do not run either apply command against a production Neon branch until its intended target, backup, and migration diff have been reviewed.
+
+## Stage 4 GIS rules and replay
+
+The browser fetches versioned GIS rules once and replays the public historical observations locally. `GET /api/v1/gis/reference-status` is also available for clients that need a server-evaluated result. Rule set `mekong-legacy-gis-reference` v1.0.0 is unconfirmed and simulation-only. This feature requires no database migration. It does not enable live ingestion, forecasts, imputation, or operational gate commands. See `Web/BE-Mekong-main/docs/stage4-gis-replay.md` and the [API contract](Web/BE-Mekong-main/docs/monitoring-api-v1.md).
+
+## Stage 5 forecast baseline
+
+Stage 5 adds an offline chronological backtest for persistence and 24-hour seasonal-naive baselines using only the approved BaoDinh.csv public window and stations. It records MAE, RMSE, bias, source hash, units, and missing-value counts. It does not train a model, access Neon, or enable forecast routes. See the [Stage 5 guide](Web/BE-Mekong-main/docs/stage5-forecast-pipeline.md) and the generated [baseline report](Web/BE-Mekong-main/reports/stage5-forecast-baseline.json).
+
+## Phase 6 DLinear experiment
+
+Phase 6 runs the vendored Time-Series-Library DLinear model offline for the three approved stations and both monitoring variables. It uses the Phase 5 holdout, saves local checkpoints and epoch-level training evidence, and does not register models or expose forecast routes. See the [Phase 6 guide](Web/BE-Mekong-main/docs/phase6-tslib-experiment.md) and [experiment report](Web/BE-Mekong-main/reports/stage6-dlinear-experiment.json).
+
+## Phase 7 forecast promotion gate
+
+The Stage 7 gate audits Phase 5/6 source lineage, checkpoint hashes, matched holdout metrics, bias, source quality, and approval evidence. The current result is HOLD, so no forecast rows are registered and public forecast routes remain disabled. See the [Phase 7 guide](Web/BE-Mekong-main/docs/phase7-forecast-promotion.md) and [promotion report](Web/BE-Mekong-main/reports/stage7-forecast-promotion.json).
+
 ## Current boundary
 
-The Neon CLI linked the configured `production` branch and `neon deploy` confirmed it already matched the Postgres policy. The local rebuild subsequently completed: 4,392 observations for `baodinh`, `gocat`, and `vamkenh` across June-July 2024 were applied. The supplied local run also confirmed that the API starts and that `/api/v1/status`, `/api/v1/stations`, and `/api/v1/metadata/data-range` respond successfully. GitHub changes are still unpushed because this workspace cannot write `.git`; GitHub branch rules and Vercel project settings remain to be completed from the user's authenticated terminal/account. Never place a Neon URL in GitHub Actions logs or source files.
+The Neon CLI linked the configured `production` branch and `neon deploy` confirmed it already matched the Postgres policy. The local rebuild subsequently completed: 4,392 observations for `baodinh`, `gocat`, and `vamkenh` across June-July 2024 were applied. A local run also confirmed that the API starts and that `/api/v1/status`, `/api/v1/stations`, and `/api/v1/metadata/data-range` respond successfully. GitHub branch protections and Vercel project settings remain account-level configuration steps. Never place a Neon URL in GitHub Actions logs or source files.

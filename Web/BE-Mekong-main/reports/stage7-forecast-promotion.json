@@ -1,0 +1,393 @@
+{
+  "schema_version": 1,
+  "stage": "stage7-forecast-promotion-gate",
+  "decision": "HOLD",
+  "eligible_for_public_api": false,
+  "model_version_status": "experimental",
+  "phase5_source_sha256": "cc9e1caabe4faec9b524af122618b8890fb1d7db35377475daed2a30af04af48",
+  "phase6_source_sha256": "cc9e1caabe4faec9b524af122618b8890fb1d7db35377475daed2a30af04af48",
+  "checks": {
+    "source_lineage": {
+      "status": "pass",
+      "details": "Phase 5 and Phase 6 must contain the same valid 64-character selected CSV SHA-256."
+    },
+    "holdout_alignment": {
+      "status": "pass",
+      "details": "The model and baselines must use the same chronological holdout boundary."
+    },
+    "required_station_targets": {
+      "status": "pass",
+      "details": "Six experimental station-variable models are required."
+    },
+    "checkpoint_integrity": {
+      "status": "pass",
+      "details": "Every checkpoint file must match its reported SHA-256.",
+      "artifacts": [
+        {
+          "station_id": "baodinh",
+          "target": "salinity",
+          "filename": "baodinh-salinity-dlinear-v1.pt",
+          "status": "pass"
+        },
+        {
+          "station_id": "baodinh",
+          "target": "water_level",
+          "filename": "baodinh-water_level-dlinear-v1.pt",
+          "status": "pass"
+        },
+        {
+          "station_id": "gocat",
+          "target": "salinity",
+          "filename": "gocat-salinity-dlinear-v1.pt",
+          "status": "pass"
+        },
+        {
+          "station_id": "gocat",
+          "target": "water_level",
+          "filename": "gocat-water_level-dlinear-v1.pt",
+          "status": "pass"
+        },
+        {
+          "station_id": "vamkenh",
+          "target": "salinity",
+          "filename": "vamkenh-salinity-dlinear-v1.pt",
+          "status": "pass"
+        },
+        {
+          "station_id": "vamkenh",
+          "target": "water_level",
+          "filename": "vamkenh-water_level-dlinear-v1.pt",
+          "status": "pass"
+        }
+      ]
+    },
+    "matched_metric_samples": {
+      "status": "pass",
+      "details": "DLinear and both baselines must be scored on the same target points."
+    },
+    "mae_rmse_vs_baselines": {
+      "status": "pass",
+      "details": "DLinear must improve MAE and RMSE against both reported baselines in every series."
+    },
+    "bias_vs_daily_naive": {
+      "status": "fail",
+      "details": "Absolute prediction bias must not be worse than the stronger daily seasonal-naive baseline.",
+      "series": [
+        {
+          "station_id": "baodinh",
+          "target": "salinity",
+          "scored_points": 432,
+          "sample_count_matches_baselines": true,
+          "beats_both_baselines_on_mae_and_rmse": true,
+          "absolute_bias_not_worse_than_daily_naive": false,
+          "dlinear_bias": 2.679549,
+          "daily_seasonal_naive_bias": 2.185708,
+          "dlinear_metrics": {
+            "n": 432,
+            "mae": 49.781984,
+            "rmse": 64.524091,
+            "bias": 2.679549
+          },
+          "daily_seasonal_naive_metrics": {
+            "n": 432,
+            "mae": 59.421875,
+            "rmse": 83.052231,
+            "bias": 2.185708
+          }
+        },
+        {
+          "station_id": "baodinh",
+          "target": "water_level",
+          "scored_points": 432,
+          "sample_count_matches_baselines": true,
+          "beats_both_baselines_on_mae_and_rmse": true,
+          "absolute_bias_not_worse_than_daily_naive": false,
+          "dlinear_bias": 0.021807,
+          "daily_seasonal_naive_bias": 0.000778,
+          "dlinear_metrics": {
+            "n": 432,
+            "mae": 0.224099,
+            "rmse": 0.299949,
+            "bias": 0.021807
+          },
+          "daily_seasonal_naive_metrics": {
+            "n": 432,
+            "mae": 0.303347,
+            "rmse": 0.460928,
+            "bias": 0.000778
+          }
+        },
+        {
+          "station_id": "gocat",
+          "target": "salinity",
+          "scored_points": 432,
+          "sample_count_matches_baselines": true,
+          "beats_both_baselines_on_mae_and_rmse": true,
+          "absolute_bias_not_worse_than_daily_naive": false,
+          "dlinear_bias": 40.540089,
+          "daily_seasonal_naive_bias": 15.793758,
+          "dlinear_metrics": {
+            "n": 432,
+            "mae": 274.987528,
+            "rmse": 375.174777,
+            "bias": 40.540089
+          },
+          "daily_seasonal_naive_metrics": {
+            "n": 432,
+            "mae": 346.937507,
+            "rmse": 498.744243,
+            "bias": 15.793758
+          }
+        },
+        {
+          "station_id": "gocat",
+          "target": "water_level",
+          "scored_points": 432,
+          "sample_count_matches_baselines": true,
+          "beats_both_baselines_on_mae_and_rmse": true,
+          "absolute_bias_not_worse_than_daily_naive": false,
+          "dlinear_bias": 0.015891,
+          "daily_seasonal_naive_bias": -0.00017,
+          "dlinear_metrics": {
+            "n": 432,
+            "mae": 0.245725,
+            "rmse": 0.334409,
+            "bias": 0.015891
+          },
+          "daily_seasonal_naive_metrics": {
+            "n": 432,
+            "mae": 0.330715,
+            "rmse": 0.518284,
+            "bias": -0.00017
+          }
+        },
+        {
+          "station_id": "vamkenh",
+          "target": "salinity",
+          "scored_points": 432,
+          "sample_count_matches_baselines": true,
+          "beats_both_baselines_on_mae_and_rmse": true,
+          "absolute_bias_not_worse_than_daily_naive": false,
+          "dlinear_bias": 495.04163,
+          "daily_seasonal_naive_bias": 117.264375,
+          "dlinear_metrics": {
+            "n": 432,
+            "mae": 2597.856015,
+            "rmse": 3389.700346,
+            "bias": 495.04163
+          },
+          "daily_seasonal_naive_metrics": {
+            "n": 432,
+            "mae": 3272.129449,
+            "rmse": 4617.106477,
+            "bias": 117.264375
+          }
+        },
+        {
+          "station_id": "vamkenh",
+          "target": "water_level",
+          "scored_points": 432,
+          "sample_count_matches_baselines": true,
+          "beats_both_baselines_on_mae_and_rmse": true,
+          "absolute_bias_not_worse_than_daily_naive": false,
+          "dlinear_bias": 0.036532,
+          "daily_seasonal_naive_bias": -0.001718,
+          "dlinear_metrics": {
+            "n": 432,
+            "mae": 0.375087,
+            "rmse": 0.576479,
+            "bias": 0.036532
+          },
+          "daily_seasonal_naive_metrics": {
+            "n": 432,
+            "mae": 0.486515,
+            "rmse": 0.819406,
+            "bias": -0.001718
+          }
+        }
+      ]
+    },
+    "multi_season_validation": {
+      "status": "hold",
+      "details": "The reports contain one June-July 2024 source window and one chronological holdout, not independent seasons or years.",
+      "independent_windows_recorded": 1
+    },
+    "source_quality_review": {
+      "status": "hold",
+      "quality_status": "unverified",
+      "details": "Imported observation provenance does not mean the measurements have been independently validated."
+    },
+    "owner_approved_threshold": {
+      "status": "hold",
+      "details": "No owner-approved deployment acceptance threshold is recorded."
+    },
+    "execution_boundary": {
+      "status": "pass",
+      "details": "The experiment must remain offline and must not enable the forecast API."
+    }
+  },
+  "reasons": [
+    "DLinear has worse absolute bias than daily seasonal naive in at least one series.",
+    "Independent multi-season or multi-year validation is not available.",
+    "Source observation quality remains unverified.",
+    "No owner-approved forecast acceptance threshold is recorded."
+  ],
+  "series_evaluation": [
+    {
+      "station_id": "baodinh",
+      "target": "salinity",
+      "scored_points": 432,
+      "sample_count_matches_baselines": true,
+      "beats_both_baselines_on_mae_and_rmse": true,
+      "absolute_bias_not_worse_than_daily_naive": false,
+      "dlinear_bias": 2.679549,
+      "daily_seasonal_naive_bias": 2.185708,
+      "dlinear_metrics": {
+        "n": 432,
+        "mae": 49.781984,
+        "rmse": 64.524091,
+        "bias": 2.679549
+      },
+      "daily_seasonal_naive_metrics": {
+        "n": 432,
+        "mae": 59.421875,
+        "rmse": 83.052231,
+        "bias": 2.185708
+      }
+    },
+    {
+      "station_id": "baodinh",
+      "target": "water_level",
+      "scored_points": 432,
+      "sample_count_matches_baselines": true,
+      "beats_both_baselines_on_mae_and_rmse": true,
+      "absolute_bias_not_worse_than_daily_naive": false,
+      "dlinear_bias": 0.021807,
+      "daily_seasonal_naive_bias": 0.000778,
+      "dlinear_metrics": {
+        "n": 432,
+        "mae": 0.224099,
+        "rmse": 0.299949,
+        "bias": 0.021807
+      },
+      "daily_seasonal_naive_metrics": {
+        "n": 432,
+        "mae": 0.303347,
+        "rmse": 0.460928,
+        "bias": 0.000778
+      }
+    },
+    {
+      "station_id": "gocat",
+      "target": "salinity",
+      "scored_points": 432,
+      "sample_count_matches_baselines": true,
+      "beats_both_baselines_on_mae_and_rmse": true,
+      "absolute_bias_not_worse_than_daily_naive": false,
+      "dlinear_bias": 40.540089,
+      "daily_seasonal_naive_bias": 15.793758,
+      "dlinear_metrics": {
+        "n": 432,
+        "mae": 274.987528,
+        "rmse": 375.174777,
+        "bias": 40.540089
+      },
+      "daily_seasonal_naive_metrics": {
+        "n": 432,
+        "mae": 346.937507,
+        "rmse": 498.744243,
+        "bias": 15.793758
+      }
+    },
+    {
+      "station_id": "gocat",
+      "target": "water_level",
+      "scored_points": 432,
+      "sample_count_matches_baselines": true,
+      "beats_both_baselines_on_mae_and_rmse": true,
+      "absolute_bias_not_worse_than_daily_naive": false,
+      "dlinear_bias": 0.015891,
+      "daily_seasonal_naive_bias": -0.00017,
+      "dlinear_metrics": {
+        "n": 432,
+        "mae": 0.245725,
+        "rmse": 0.334409,
+        "bias": 0.015891
+      },
+      "daily_seasonal_naive_metrics": {
+        "n": 432,
+        "mae": 0.330715,
+        "rmse": 0.518284,
+        "bias": -0.00017
+      }
+    },
+    {
+      "station_id": "vamkenh",
+      "target": "salinity",
+      "scored_points": 432,
+      "sample_count_matches_baselines": true,
+      "beats_both_baselines_on_mae_and_rmse": true,
+      "absolute_bias_not_worse_than_daily_naive": false,
+      "dlinear_bias": 495.04163,
+      "daily_seasonal_naive_bias": 117.264375,
+      "dlinear_metrics": {
+        "n": 432,
+        "mae": 2597.856015,
+        "rmse": 3389.700346,
+        "bias": 495.04163
+      },
+      "daily_seasonal_naive_metrics": {
+        "n": 432,
+        "mae": 3272.129449,
+        "rmse": 4617.106477,
+        "bias": 117.264375
+      }
+    },
+    {
+      "station_id": "vamkenh",
+      "target": "water_level",
+      "scored_points": 432,
+      "sample_count_matches_baselines": true,
+      "beats_both_baselines_on_mae_and_rmse": true,
+      "absolute_bias_not_worse_than_daily_naive": false,
+      "dlinear_bias": 0.036532,
+      "daily_seasonal_naive_bias": -0.001718,
+      "dlinear_metrics": {
+        "n": 432,
+        "mae": 0.375087,
+        "rmse": 0.576479,
+        "bias": 0.036532
+      },
+      "daily_seasonal_naive_metrics": {
+        "n": 432,
+        "mae": 0.486515,
+        "rmse": 0.819406,
+        "bias": -0.001718
+      }
+    }
+  ],
+  "actions_before_promotion": [
+    "Review and resolve the bias degradation against daily seasonal naive.",
+    "Evaluate independent periods from additional seasons or years.",
+    "Review measurement quality and source provenance with the data owner.",
+    "Obtain an owner-approved acceptance threshold for each target and station.",
+    "Rerun this gate after the evidence and reports are updated."
+  ],
+  "database_accessed": false,
+  "forecast_rows_written": false,
+  "forecast_api_enabled": false,
+  "evidence_files": {
+    "phase5_report": {
+      "path": "Web/BE-Mekong-main/reports/stage5-forecast-baseline.json",
+      "sha256": "8bbcb31b62ee23f1994aac47156d78145b6f6e4ca803b894a6545d5eab3cd640"
+    },
+    "phase6_report": {
+      "path": "Web/BE-Mekong-main/reports/stage6-dlinear-experiment.json",
+      "sha256": "631e3c024223517386b38bae1dbf698c9f729c1d3d361a1acfef793700df3b3a"
+    },
+    "gate_script": {
+      "path": "Web/BE-Mekong-main/scripts/stage7-forecast-promotion-gate.py",
+      "sha256": "a39a5b092348536b47e0e6886cff4f4881a78e6e0990adbcdd1e667c7859c375"
+    }
+  }
+}

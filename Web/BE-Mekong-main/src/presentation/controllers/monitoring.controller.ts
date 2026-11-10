@@ -10,6 +10,10 @@ import {
 import { PositionUseCases } from '../../application/use-cases/position.use-cases';
 import { parseTimestamp } from '../date-validation';
 import {
+  evaluateReferenceGisRule,
+  REFERENCE_GIS_RULE_SET,
+} from '../../domain/rules/reference-gis-rule-set';
+import {
   assertInsidePublicWindow,
   getPublicDataWindow,
   isPublicStationId,
@@ -159,6 +163,56 @@ export class MonitoringController {
     };
   }
 
+  @Get('gis/reference-rules')
+  referenceGisRules() {
+    return { success: true, data: REFERENCE_GIS_RULE_SET };
+  }
+
+  @Get('gis/reference-status')
+  async referenceGisStatus(
+    @Query('at') atValue: unknown,
+    @Query('mode') modeValue?: string,
+  ) {
+    const at = parseTimestamp(atValue, 'at');
+    const window = getPublicDataWindow();
+    assertInsidePublicWindow(at, at, window);
+    const mode = modeValue ?? 'historical';
+    if (mode !== 'historical' && mode !== 'replay') {
+      throw new BadRequestException(
+        'mode must be either historical or replay; live and forecast are unavailable.',
+      );
+    }
+
+    const rows = await this.positions.getSnapshot(
+      at,
+      window?.from ?? new Date(0),
+    );
+    return {
+      success: true,
+      mode,
+      asOf: at.toISOString(),
+      dataKind: 'observed',
+      source: 'BaoDinh.csv',
+      ruleSet: REFERENCE_GIS_RULE_SET,
+      data: rows.flatMap(({ station, observation }) => {
+        const publicStation = toPublicStation(station);
+        if (!publicStation) return [];
+        const formatted = observation ? formatObservation(observation) : null;
+        return [
+          {
+            station: publicStation,
+            observation: formatted,
+            referenceStatus: evaluateReferenceGisRule(
+              station.id,
+              formatted?.salinity.value ?? null,
+              formatted !== null,
+            ),
+          },
+        ];
+      }),
+    };
+  }
+
   @Get('stations/:id/forecasts')
   forecasts(@Param('id') id: string) {
     if (!isPublicStationId(id))
@@ -196,6 +250,17 @@ export class MonitoringController {
         measurementProvenance: 'unverified',
         forecasting: 'not_configured',
         imputation: 'not_configured',
+        dataModes: {
+          historical: 'available',
+          replay: 'available',
+          live: 'not_configured',
+          forecast: 'not_configured',
+        },
+        gisReferenceRules: {
+          version: REFERENCE_GIS_RULE_SET.version,
+          confirmationStatus: REFERENCE_GIS_RULE_SET.confirmationStatus,
+          intendedUse: REFERENCE_GIS_RULE_SET.intendedUse,
+        },
       },
     };
   }

@@ -1,6 +1,6 @@
 # Monitoring API v1
 
-This is the Phase 1 public contract for the `positions` and `position_data` schema. Salinity is normalized from the selected CSV's g/L values to mg/L (multiply by 1000). Water level remains in meters and uses the source sea-level reference. Measurement quality remains `unverified`; responses describe the historical demo dataset and do not claim live readings. The additive Phase 2 schema can record source-file and raw-field provenance after its guarded import runs; that provenance does not change the quality status or this V1 response contract.
+This document describes the public V1 contract for the `positions` and `position_data` schema, including the additive Stage 4 GIS reference endpoint. Salinity is normalized from the selected CSV's g/L values to mg/L (multiply by 1000). Water level remains in meters and uses the source sea-level reference. Measurement quality remains `unverified`; responses describe the historical demo dataset and do not claim live readings. The additive Phase 2 schema can record source-file and raw-field provenance after its guarded import runs; that provenance does not change the quality status or observation contract.
 
 The public station set is the current intersection of station headers in `BaoDinh.csv` and coordinates in `Sanility_GIS_Monitoring/cong_locations.csv`: `baodinh`, `gocat`, and `vamkenh`. V1 returns canonical coordinates from `cong_locations.csv`; it does not expose the legacy database coordinates for other stations. The importer now reads `BaoDinh.csv` only, per the Phase 0 Go Cat source choice. Existing database rows still have unverified provenance until the selected source is imported and reconciled.
 
@@ -8,13 +8,52 @@ All timestamps in v1 query parameters must be ISO 8601 with `Z` or an explicit n
 
 | Endpoint | Purpose |
 | --- | --- |
-| `GET /api/v1/status` | Report API state, public-window configuration, measurement provenance, and whether forecast/imputation pipelines are configured. |
+| `GET /api/v1/status` | Report API state, public-window configuration, measurement provenance, configured pipelines, and available historical/replay/live/forecast modes. |
 | `GET /api/v1/stations` | List approved stations that exist in the database and have data in the public window. Coordinates include their source path. |
 | `GET /api/v1/metadata/data-range` | Earliest/latest timestamps for approved stations inside the public window, or `{ "from": null, "to": null }` when empty. |
 | `GET /api/v1/observations/snapshot?at=...&maxAgeHours=...` | Per approved station, return the latest record at or before `at`, bounded by the window and `at - maxAgeHours`; otherwise `observation: null` and `status: no_data`. Default age is 6 hours, allowed range 0-168. Future records are never used. |
 | `GET /api/v1/stations/:id/observations?from=...&to=...` | Inclusive station series, at most 31 days and 10,000 returned rows. `truncated` indicates more rows exist. Unknown or non-public station returns 404. |
 | `GET /api/v1/stations/:id/forecasts` | Reserved contract; returns 501 until a forecast model is integrated. |
 | `GET /api/v1/stations/:id/imputations` | Reserved contract; returns 501 until an imputation model is integrated. |
+| `GET /api/v1/gis/reference-rules` | Return the versioned, unconfirmed GIS reference rules used by the historical UI. |
+| `GET /api/v1/gis/reference-status?at=...&mode=...` | Evaluate the versioned legacy GIS reference rules against the latest observed values at or before `at`. It returns a reference simulation, never an operational gate command. |
+
+The GIS reference endpoint accepts `mode=historical` (default) or `mode=replay`. It applies rule set `mekong-legacy-gis-reference` version `1.0.0`, marked `unconfirmed` and intended only for reference simulation. The Vam Kenh rule's source threshold is `1.5 g/L`, normalized to `1,500 mg/L`; the Bao Dinh and Go Cat labels are copied from the legacy script. Results identify the `BaoDinh.csv` observed-data source and preserve the observation's `unverified` quality. A missing observation or required measurement produces an unknown result. Live mode and forecast mode remain unavailable.
+
+The status endpoint now reports `dataModes`: `historical` and `replay` are available, while `live` and `forecast` are `not_configured`. Forecast and imputation routes remain separate and unavailable until models are integrated.
+
+Example GIS response:
+
+```json
+{
+  "success": true,
+  "mode": "replay",
+  "asOf": "2024-06-15T00:00:00.000Z",
+  "dataKind": "observed",
+  "source": "BaoDinh.csv",
+  "ruleSet": {
+    "id": "mekong-legacy-gis-reference",
+    "version": "1.0.0",
+    "confirmationStatus": "unconfirmed",
+    "intendedUse": "reference_simulation_only"
+  },
+  "data": [
+    {
+      "station": { "id": "vamkenh", "name": "Vam Kenh" },
+      "observation": {
+        "observedAt": "2024-06-15T00:00:00.000Z",
+        "salinity": { "value": 1800, "unit": "mg/L" }
+      },
+      "referenceStatus": {
+        "code": "close_for_storage",
+        "label": "Đóng trữ",
+        "basis": "Legacy rule: salinity > 1.5 g/L (1500 mg/L).",
+        "thresholdMgL": 1500
+      }
+    }
+  ]
+}
+```
 
 Production must set `PUBLIC_DATA_START=2024-06-01T00:00:00+07:00` and `PUBLIC_DATA_END=2024-07-31T23:59:59+07:00` for the selected June–July 2024 demo. The interval must be ordered and no longer than 62 days. Data endpoints return 503 when either setting is absent or invalid. Local non-production runs may omit both settings. Requests outside a configured window return 400.
 
