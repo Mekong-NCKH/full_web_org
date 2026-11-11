@@ -1,10 +1,12 @@
+import { maplibreGL } from '@maplibre/maplibre-gl-leaflet';
 import L from 'leaflet';
+import { setWorkerUrl } from 'maplibre-gl';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useEffect } from 'react';
 import {
   CircleMarker,
   MapContainer,
   Popup,
-  TileLayer,
   useMap,
 } from 'react-leaflet';
 
@@ -15,6 +17,12 @@ import type {
   Station,
 } from '@/types/monitoring.type';
 import 'leaflet/dist/leaflet.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
+
+setWorkerUrl(workerUrl);
+
+const openFreeMapAttribution =
+  '<a href="https://openfreemap.org/">OpenFreeMap</a>, <a href="https://www.openmaptiles.org/">© OpenMapTiles</a>, Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 type InteractiveMapProps = {
   stations: Station[];
@@ -31,6 +39,19 @@ type InteractiveMapProps = {
 
 function StationBounds({ stations }: { stations: Station[] }) {
   const map = useMap();
+
+  useEffect(() => {
+    const baseMap = maplibreGL({
+      attributionControl: false,
+      style: 'https://tiles.openfreemap.org/styles/positron',
+    }).addTo(map);
+    map.attributionControl.addAttribution(openFreeMapAttribution);
+
+    return () => {
+      map.removeLayer(baseMap);
+      map.attributionControl.removeAttribution(openFreeMapAttribution);
+    };
+  }, [map]);
 
   useEffect(() => {
     if (stations.length === 0) return;
@@ -80,13 +101,14 @@ export default function InteractiveMap({
         zoom={8}
         minZoom={7}
         maxZoom={14}
+        maxBounds={[
+          [-85.05112878, -180],
+          [85.05112878, 180],
+        ]}
+        maxBoundsViscosity={1}
         scrollWheelZoom
         style={{ height: '100%', width: '100%' }}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
         <StationBounds stations={stations} />
         {stations.map((station) => {
           const reading = observations[station.id] ?? {

@@ -39,6 +39,8 @@ Configure these in the Vercel project dashboards. Do not commit credentials or p
 
 - `VITE_API_BASE_URL`: the backend's production origin, without a trailing slash.
 
+The Leaflet map uses the OpenFreeMap Positron vector style and does not need an API key or frontend environment variable. Keep the visible attribution for OpenFreeMap, OpenMapTiles, and OpenStreetMap. The public tile instance is free to use without a request limit; it does not include an SLA guarantee. See [OpenFreeMap](https://openfreemap.org/) and its [Leaflet quick start](https://openfreemap.org/quick_start/).
+
 After adding or changing environment variables, create a new deployment so both projects use the updated values. Keep Neon credentials in the Vercel backend environment only.
 
 ## CI and production deploy

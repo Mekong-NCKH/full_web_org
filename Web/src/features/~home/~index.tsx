@@ -31,6 +31,7 @@ import type {
   Station,
 } from '@/types/monitoring.type';
 
+import SalinityNewsSwiper from './components/salinity-news-swipper';
 import { evaluateGISReferenceRule } from './gis-reference';
 
 const InteractiveMap = lazy(() => import('./components/interactive-map'));
@@ -540,87 +541,11 @@ function RouteComponent() {
     stations.find((station) => station.id === selectedStationId) ?? null;
 
   return (
-    <main className="min-h-screen bg-[#f5f8fc] text-slate-900">
-      <header className="sticky top-0 z-[1100]">
-        <div className="border-b border-slate-100 bg-white">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-            <a href="#top" className="flex min-w-0 items-center gap-3 sm:gap-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-sm bg-[#075fc5] text-lg font-black tracking-tight text-white shadow-sm sm:size-16 sm:text-2xl">
-                BK
-              </span>
-              <span className="min-w-0 leading-tight">
-                <span className="block text-xl font-black tracking-tight text-[#118642] sm:text-[27px]">
-                  BK MEKONG
-                </span>
-                <span className="mt-1 block max-w-xl text-xs leading-5 text-slate-600 sm:text-sm">
-                  Theo dõi và phân tích tình hình xâm nhập mặn
-                </span>
-                <span className="hidden text-[11px] text-slate-500 sm:block">
-                  Trường Đại học Bách khoa · ĐHQG TP.HCM
-                </span>
-              </span>
-            </a>
-            <span className="hidden shrink-0 items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-right sm:flex">
-              <span className="size-2 rounded-full bg-[#118642]" />
-              <span>
-                <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[#075fc5]">
-                  Cổng dữ liệu quan trắc
-                </span>
-                <span className="block text-[11px] text-slate-600">
-                  Bản demo lịch sử · 2024
-                </span>
-              </span>
-            </span>
-          </div>
-        </div>
-        <nav
-          aria-label="Điều hướng chính"
-          className="border-b-4 border-[#118642] bg-[#075fc5] text-white shadow-[0_3px_10px_rgba(7,95,197,0.16)]"
-        >
-          <div className="mx-auto flex max-w-7xl items-stretch gap-1 overflow-x-auto px-3 sm:px-6 lg:px-8">
-            <a
-              href="#top"
-              aria-label="Trang chủ"
-              aria-current="page"
-              className="grid min-h-12 shrink-0 place-items-center bg-white/15 px-4 transition-colors hover:bg-white/20"
-            >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="size-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m3 10 9-7 9 7" />
-                <path d="M5 9v11h14V9M9 20v-6h6v6" />
-              </svg>
-            </a>
-            <a href="#overview" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
-              Giới thiệu
-            </a>
-            <a href="#stations" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
-              Bản đồ trạm
-            </a>
-            <a href="#history" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
-              Diễn biến XNM
-            </a>
-            <a href="#about-data" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
-              Tư liệu & kiến thức
-            </a>
-          </div>
-        </nav>
-      </header>
-
-      <div
-        id="top"
-        className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8"
-      >
+    <main id="top" className="min-h-full bg-[#f5f8fc] text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 pb-12 pt-6 sm:px-6 lg:px-8">
         <section
           id="overview"
-          className="relative overflow-hidden rounded-2xl border border-blue-100 bg-white px-6 py-7 shadow-[0_12px_34px_rgba(7,95,197,0.08)] sm:px-10 sm:py-9"
+          className="relative scroll-mt-32 overflow-hidden rounded-2xl border border-blue-100 bg-white px-6 py-7 shadow-[0_12px_34px_rgba(7,95,197,0.08)] sm:px-10 sm:py-9"
         >
           <div className="pointer-events-none absolute -right-10 -top-24 size-80 rounded-full border border-blue-100" />
           <div className="pointer-events-none absolute -right-2 -top-16 size-64 rounded-full border border-green-100" />
@@ -678,7 +603,7 @@ function RouteComponent() {
           </div>
         )}
 
-        <section id="stations" className="mt-10 scroll-mt-24">
+        <section id="stations" className="mt-10 scroll-mt-32">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#118642]">
@@ -955,7 +880,7 @@ function RouteComponent() {
           />
         </section>
 
-        <section id="history" className="mt-10 scroll-mt-24">
+        <section id="history" className="mt-10 scroll-mt-32">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#118642]">
@@ -993,9 +918,26 @@ function RouteComponent() {
           </div>
         </section>
 
+        <section id="news" className="mt-10 scroll-mt-32">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#118642]">
+                Tin tức khu vực
+              </p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#075fc5]">
+                Tin tức xâm nhập mặn
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500">
+              Tin từ nguồn báo chí công khai; không phải dữ liệu quan trắc.
+            </p>
+          </div>
+          <SalinityNewsSwiper />
+        </section>
+
         <section
           id="about-data"
-          className="mt-10 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-7"
+          className="mt-10 scroll-mt-32 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-7"
         >
           <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
             <div>
@@ -1048,13 +990,6 @@ function RouteComponent() {
           )}
         </section>
 
-        <footer className="mt-8 flex flex-col justify-between gap-2 border-t border-slate-200 px-1 pt-5 text-xs text-slate-500 sm:flex-row">
-          <span>Mekong Monitor · Cổng thông tin dữ liệu quan trắc</span>
-          <span>
-            Demo lịch sử · Không đại diện cho cảnh báo hoặc số liệu thời gian
-            thực
-          </span>
-        </footer>
       </div>
     </main>
   );

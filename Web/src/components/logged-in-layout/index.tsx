@@ -5,7 +5,6 @@ import { useUserStore } from '@/stores';
 
 // import CountdownBar from '../countdown-bar';
 
-import Breadcrumbs from './breadcrumbs';
 import Footer from './footer';
 import Header from './header';
 import Subheader from './sub-header';
@@ -20,28 +19,13 @@ const LoggedInLayout = ({ children }: LoggedInProps) => {
   const { user, setUser } = useUserStore();
 
   return (
-    <>
-      <div className="relative flex min-h-screen w-screen min-w-[360px] flex-row bg-white">
-        <ScrollToTop />
-        {/* <SidebarMobile
-          isManager={user?.isManager}
-          opened={sidebarMobileOpened}
-          close={() => setSidebarMobileOpened(false)}
-        />
-        <SidebarDesktop
-          isManager={user?.isManager}
-          opened={sidebarDesktopOpened}
-        /> */}
-        <div className="relative flex min-h-screen w-full min-w-0 flex-col bg-white">
-          <Header user={user} setUser={setUser} />
-          <Subheader />
-          <Breadcrumbs />
-          {/* <CountdownBar /> */}
-          <div className="relative flex flex-col p-5 3xl:p-10">{children}</div>
-        </div>
-      </div>
+    <div className="relative flex min-h-screen w-full min-w-[320px] flex-col bg-white">
+      <ScrollToTop />
+      <Header user={user} setUser={setUser} />
+      <Subheader />
+      <div className="relative flex flex-1 flex-col">{children}</div>
       <Footer />
-    </>
+    </div>
   );
 };
 
