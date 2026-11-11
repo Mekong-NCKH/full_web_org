@@ -99,7 +99,7 @@ export default function InteractiveMap({
           const selected = station.id === selectedStationId;
           const color =
             reading.freshness === 'fresh'
-              ? '#168c79'
+              ? '#118642'
               : reading.freshness === 'stale'
                 ? '#d97706'
                 : readingLoading
@@ -120,7 +120,7 @@ export default function InteractiveMap({
               center={[station.location.latitude, station.location.longitude]}
               radius={selected ? 12 : 9}
               pathOptions={{
-                color: selected ? '#134e4a' : color,
+                color: selected ? '#064f9f' : color,
                 fillColor: color,
                 fillOpacity: 0.88,
                 weight: selected ? 4 : 2,
@@ -144,19 +144,19 @@ export default function InteractiveMap({
                       ? `${readingDescription}: ${formatTimestamp(observation.observedAt)}`
                       : readingDescription}
                   </div>
-                  <div className="mt-2 rounded-lg border border-indigo-100 bg-indigo-50 p-2">
-                    <div className="font-medium text-indigo-900">
+                  <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 p-2">
+                    <div className="font-medium text-blue-900">
                       Mô phỏng tham khảo v{ruleSetVersion ?? '…'}:{' '}
                       {referenceStatus?.label ?? 'Đang tải quy tắc'}
                     </div>
-                    <div className="mt-0.5 text-[11px] text-indigo-800">
+                    <div className="mt-0.5 text-[11px] text-blue-800">
                       {dataMode === 'replay'
                         ? 'Phát lại dữ liệu lịch sử'
                         : 'Dữ liệu lịch sử'}{' '}
                       · Chưa xác nhận vận hành; không phải trạng thái thực tế.
                     </div>
                     {referenceStatus?.basis && (
-                      <div className="mt-1 text-[10px] text-indigo-700">
+                      <div className="mt-1 text-[10px] text-blue-700">
                         Căn cứ: {referenceStatus.basis}
                       </div>
                     )}
@@ -194,7 +194,7 @@ export default function InteractiveMap({
 
       <div className="absolute bottom-4 left-4 z-[500] flex flex-wrap gap-x-3 gap-y-1 rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-[11px] text-slate-700 shadow-sm backdrop-blur">
         <span className="flex items-center gap-1.5">
-          <i className="size-2.5 rounded-full bg-[#168c79]" />
+          <i className="size-2.5 rounded-full bg-[#118642]" />
           Bản ghi ≤ {SNAPSHOT_MAX_AGE_HOURS} giờ
         </span>
         <span className="flex items-center gap-1.5">
