@@ -37,7 +37,7 @@ const InteractiveMap = lazy(() => import('./components/interactive-map'));
 
 export const Route = createFileRoute('/home/')({ component: RouteComponent });
 
-const chartColors = ['#0f766e', '#2563eb', '#db4961'];
+const chartColors = ['#075fc5', '#118642', '#e18b19'];
 
 function formatDateTime(value: string | Date | null): string {
   if (!value) return '—';
@@ -154,7 +154,7 @@ function MetricCard({
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)]">
-      <div className="mb-5 flex size-10 items-center justify-center rounded-xl bg-teal-50 text-teal-800">
+      <div className="mb-5 flex size-10 items-center justify-center rounded-xl bg-[#eaf4ff] text-[#075fc5]">
         <Icon kind={icon} />
       </div>
       <p className="text-sm font-medium text-slate-500">{label}</p>
@@ -188,7 +188,7 @@ function ChartPanel({
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-6">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="font-semibold text-slate-900">{title}</h3>
+          <h3 className="font-semibold text-[#075fc5]">{title}</h3>
           <p className="mt-1 text-xs text-slate-500">{description}</p>
         </div>
         <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
@@ -540,49 +540,78 @@ function RouteComponent() {
     stations.find((station) => station.id === selectedStationId) ?? null;
 
   return (
-    <main className="min-h-screen bg-[#f4f7fa] text-slate-900">
-      <header className="sticky top-0 z-[1100] border-b border-slate-200/80 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
-          <a
-            href="#top"
-            className="flex items-center gap-3"
-            aria-label="Mekong Salinity Monitor, trang đầu"
-          >
-            <span className="flex size-10 items-center justify-center rounded-xl bg-[#0d3b4a] text-teal-100">
-              <Icon kind="wave" />
-            </span>
-            <span className="leading-tight">
-              <span className="block text-sm font-bold tracking-wide text-slate-900">
-                MEKONG MONITOR
+    <main className="min-h-screen bg-[#f5f8fc] text-slate-900">
+      <header className="sticky top-0 z-[1100]">
+        <div className="border-b border-slate-100 bg-white">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
+            <a href="#top" className="flex min-w-0 items-center gap-3 sm:gap-4">
+              <span className="grid size-12 shrink-0 place-items-center rounded-sm bg-[#075fc5] text-lg font-black tracking-tight text-white shadow-sm sm:size-16 sm:text-2xl">
+                BK
               </span>
-              <span className="block text-[11px] text-slate-500">
-                Cổng dữ liệu quan trắc
+              <span className="min-w-0 leading-tight">
+                <span className="block text-xl font-black tracking-tight text-[#118642] sm:text-[27px]">
+                  BK MEKONG
+                </span>
+                <span className="mt-1 block max-w-xl text-xs leading-5 text-slate-600 sm:text-sm">
+                  Theo dõi và phân tích tình hình xâm nhập mặn
+                </span>
+                <span className="hidden text-[11px] text-slate-500 sm:block">
+                  Trường Đại học Bách khoa · ĐHQG TP.HCM
+                </span>
+              </span>
+            </a>
+            <span className="hidden shrink-0 items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-right sm:flex">
+              <span className="size-2 rounded-full bg-[#118642]" />
+              <span>
+                <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[#075fc5]">
+                  Cổng dữ liệu quan trắc
+                </span>
+                <span className="block text-[11px] text-slate-600">
+                  Bản demo lịch sử · 2024
+                </span>
               </span>
             </span>
-          </a>
-          <nav
-            className="hidden items-center gap-7 text-sm font-medium text-slate-600 md:flex"
-            aria-label="Điều hướng chính"
-          >
-            <a className="transition hover:text-teal-800" href="#overview">
-              Tổng quan
-            </a>
-            <a className="transition hover:text-teal-800" href="#stations">
-              Trạm quan trắc
-            </a>
-            <a className="transition hover:text-teal-800" href="#history">
-              Lịch sử
-            </a>
-            <a className="transition hover:text-teal-800" href="#about-data">
-              Nguồn dữ liệu
-            </a>
-          </nav>
-          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-amber-800">
-            {dataMode === 'replay'
-              ? 'PHÁT LẠI DỮ LIỆU LỊCH SỬ'
-              : 'BẢN DEMO LỊCH SỬ'}
-          </span>
+          </div>
         </div>
+        <nav
+          aria-label="Điều hướng chính"
+          className="border-b-4 border-[#118642] bg-[#075fc5] text-white shadow-[0_3px_10px_rgba(7,95,197,0.16)]"
+        >
+          <div className="mx-auto flex max-w-7xl items-stretch gap-1 overflow-x-auto px-3 sm:px-6 lg:px-8">
+            <a
+              href="#top"
+              aria-label="Trang chủ"
+              aria-current="page"
+              className="grid min-h-12 shrink-0 place-items-center bg-white/15 px-4 transition-colors hover:bg-white/20"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="size-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m3 10 9-7 9 7" />
+                <path d="M5 9v11h14V9M9 20v-6h6v6" />
+              </svg>
+            </a>
+            <a href="#overview" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
+              Giới thiệu
+            </a>
+            <a href="#stations" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
+              Bản đồ trạm
+            </a>
+            <a href="#history" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
+              Diễn biến XNM
+            </a>
+            <a href="#about-data" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-[11px] font-bold uppercase tracking-wide hover:bg-white/15 sm:px-5 sm:text-xs">
+              Tư liệu & kiến thức
+            </a>
+          </div>
+        </nav>
       </header>
 
       <div
@@ -591,44 +620,42 @@ function RouteComponent() {
       >
         <section
           id="overview"
-          className="relative overflow-hidden rounded-[28px] bg-[#0d3542] px-6 py-8 text-white shadow-[0_20px_60px_rgba(13,53,66,0.16)] sm:px-10 sm:py-11"
+          className="relative overflow-hidden rounded-2xl border border-blue-100 bg-white px-6 py-7 shadow-[0_12px_34px_rgba(7,95,197,0.08)] sm:px-10 sm:py-9"
         >
-          <div className="pointer-events-none absolute -right-10 -top-24 size-80 rounded-full border border-white/10" />
-          <div className="pointer-events-none absolute -right-2 -top-16 size-64 rounded-full border border-white/10" />
-          <div className="relative grid items-end gap-8 lg:grid-cols-[1fr_340px]">
+          <div className="pointer-events-none absolute -right-10 -top-24 size-80 rounded-full border border-blue-100" />
+          <div className="pointer-events-none absolute -right-2 -top-16 size-64 rounded-full border border-green-100" />
+          <div className="relative grid items-center gap-8 lg:grid-cols-[1fr_340px]">
             <div className="max-w-3xl">
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-teal-200/20 bg-teal-200/10 px-3 py-1.5 text-xs font-medium text-teal-100">
-                <span className="size-1.5 rounded-full bg-teal-300" /> Dữ liệu
-                lịch sử · 01/06–31/07/2024
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-green-100 bg-green-50 px-3 py-1.5 text-xs font-semibold text-[#118642]">
+                <span className="size-1.5 rounded-full bg-[#118642]" /> KHU VỰC
+                GÒ CÔNG · DỮ LIỆU LỊCH SỬ
               </div>
-              <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-[42px]">
-                Theo dõi độ mặn và mực nước tại các cửa sông Mekong
+              <h1 className="max-w-3xl text-3xl font-black leading-tight tracking-tight text-[#075fc5] sm:text-4xl lg:text-[42px]">
+                BẢNG THÔNG TIN TỔNG HỢP
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                Bản đồ quan trắc và chuỗi số liệu theo giờ giúp người dân xem
-                diễn biến tại từng trạm trong khoảng demo đã chọn.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                Bản đồ và số liệu lịch sử giúp bạn xem diễn biến độ mặn, mực
+                nước theo từng trạm trong khu vực Gò Công.
               </p>
-              <a
-                href="#stations"
-                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0d3542] transition hover:bg-teal-50"
-              >
-                Xem dữ liệu trạm <span aria-hidden="true">↓</span>
-              </a>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-5 backdrop-blur-sm">
+            <div className="rounded-xl border border-blue-100 bg-[#f5faff] p-5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-300">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#075fc5]">
                   Cửa sổ dữ liệu
                 </p>
-                <Icon kind="clock" />
+                <span className="text-[#118642]"><Icon kind="clock" /></span>
               </div>
-              <p className="mt-3 text-lg font-semibold">
-                Tháng 6 – tháng 7, 2024
+              <p className="mt-3 text-lg font-bold text-slate-900">
+                {dataRange?.from && dataRange.to
+                  ? periodText
+                  : loading
+                    ? 'Đang tải khoảng dữ liệu…'
+                    : 'Chưa có khoảng dữ liệu'}
               </p>
-              <p className="mt-1 text-xs leading-5 text-slate-300">
+              <p className="mt-1 text-xs leading-5 text-slate-600">
                 Múi giờ hiển thị: Việt Nam (UTC+07:00)
               </p>
-              <div className="mt-4 border-t border-white/10 pt-4 text-xs leading-5 text-slate-300">
+              <div className="mt-4 border-t border-blue-100 pt-4 text-xs leading-5 text-slate-600">
                 Đây là dữ liệu lịch sử phục vụ demo, không phải số đo thời gian
                 thực.
               </div>
@@ -651,43 +678,13 @@ function RouteComponent() {
           </div>
         )}
 
-        <section
-          className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-          aria-label="Chỉ số tổng quan"
-        >
-          <MetricCard
-            icon="pin"
-            label="Trạm có dữ liệu công khai"
-            value={loading ? '…' : String(stations.length)}
-            detail="Chỉ gồm trạm có vị trí đã xác định"
-          />
-          <MetricCard
-            icon="clock"
-            label="Khoảng demo"
-            value="61 ngày"
-            detail="01/06/2024 đến 31/07/2024"
-          />
-          <MetricCard
-            icon="drop"
-            label="Quan trắc độ mặn"
-            value={historyLoading ? '…' : historyCount.toLocaleString('vi-VN')}
-            detail="Giá trị chuẩn hóa sang mg/L"
-          />
-          <MetricCard
-            icon="water"
-            label="Mực nước"
-            value={stations.length ? 'Theo giờ' : '—'}
-            detail="Mét, theo mốc mực nước biển của nguồn"
-          />
-        </section>
-
         <section id="stations" className="mt-10 scroll-mt-24">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#118642]">
                 Giám sát theo vị trí
               </p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#075fc5]">
                 Bản đồ trạm quan trắc
               </h2>
             </div>
@@ -723,7 +720,7 @@ function RouteComponent() {
             <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-6">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-slate-900">
+                  <h3 className="font-semibold text-[#075fc5]">
                     Tình hình tại trạm
                   </h3>
                   <p className="mt-1 text-xs text-slate-500">
@@ -751,7 +748,7 @@ function RouteComponent() {
                     setDataMode('historical');
                   }}
                   aria-pressed={dataMode === 'historical'}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${dataMode === 'historical' ? 'border-teal-700 bg-teal-50 text-teal-900' : 'border-slate-200 bg-white text-slate-600'}`}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold ${dataMode === 'historical' ? 'border-[#075fc5] bg-[#eaf4ff] text-[#075fc5]' : 'border-slate-200 bg-white text-slate-600'}`}
                 >
                   Lịch sử
                 </button>
@@ -769,7 +766,7 @@ function RouteComponent() {
                     }
                     setIsReplaying(true);
                   }}
-                  className="rounded-lg border border-teal-700 bg-teal-700 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-lg border border-[#075fc5] bg-[#075fc5] px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Phát lại
                 </button>
@@ -794,7 +791,7 @@ function RouteComponent() {
               </p>
               <input
                 id="demo-time"
-                className="mt-3 h-2 w-full cursor-pointer accent-teal-700"
+                className="mt-3 h-2 w-full cursor-pointer accent-[#075fc5]"
                 type="range"
                 min={dataRange?.from ? new Date(dataRange.from).getTime() : 0}
                 max={dataRange?.to ? new Date(dataRange.to).getTime() : 0}
@@ -859,12 +856,12 @@ function RouteComponent() {
                       <button
                         key={station.id}
                         onClick={() => setSelectedStationId(station.id)}
-                        className={`w-full rounded-xl border p-4 text-left transition ${active ? 'border-teal-700/40 bg-teal-50/50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'}`}
+                        className={`w-full rounded-xl border p-4 text-left transition ${active ? 'border-[#075fc5]/40 bg-[#eaf4ff] shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <span className="flex items-center gap-2 font-semibold text-slate-900">
                             <span
-                              className={`size-2 rounded-full ${active ? 'bg-teal-700' : 'bg-slate-300'}`}
+                              className={`size-2 rounded-full ${active ? 'bg-[#075fc5]' : 'bg-slate-300'}`}
                             />
                             {station.name}
                           </span>
@@ -928,13 +925,43 @@ function RouteComponent() {
           </div>
         </section>
 
+        <section
+          className="mt-8 grid gap-3 rounded-2xl bg-[#075fc5] p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4"
+          aria-label="Chỉ số tổng quan"
+        >
+          <MetricCard
+            icon="pin"
+            label="Trạm có dữ liệu công khai"
+            value={loading ? '…' : String(stations.length)}
+            detail="Chỉ gồm trạm có vị trí đã xác định"
+          />
+          <MetricCard
+            icon="clock"
+            label="Khoảng dữ liệu"
+            value={dataRange?.from && dataRange.to ? '61 ngày' : '—'}
+            detail={periodText}
+          />
+          <MetricCard
+            icon="drop"
+            label="Quan trắc độ mặn"
+            value={historyLoading ? '…' : historyCount.toLocaleString('vi-VN')}
+            detail="Giá trị chuẩn hóa sang mg/L"
+          />
+          <MetricCard
+            icon="water"
+            label="Mực nước"
+            value={stations.length ? 'Theo giờ' : '—'}
+            detail="Mét, theo mốc mực nước biển của nguồn"
+          />
+        </section>
+
         <section id="history" className="mt-10 scroll-mt-24">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#118642]">
                 Chuỗi quan trắc
               </p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#075fc5]">
                 Diễn biến theo thời gian
               </h2>
             </div>
@@ -972,10 +999,10 @@ function RouteComponent() {
         >
           <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-teal-800">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#118642]">
                 Minh bạch dữ liệu
               </p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-900">
+              <h2 className="mt-1 text-xl font-semibold text-[#075fc5]">
                 Nguồn và cách đọc số liệu
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
