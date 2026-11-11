@@ -8,10 +8,6 @@ import handleAxiosError from '@/helpers/handle-axios-error';
 import { useAuthStore, useUserStore } from '@/stores';
 
 import mockupUsers from '../../../public/mockupUsers.json';
-// import overseaStudent from '../../assets/animations/Uy24MEqryK.json';
-import BachKhoaLogo from '../../assets/bachkhoa.png';
-
-import { WaveLeft, WaveRight, WaveRightRotated } from './wave';
 
 
 export const Route = createFileRoute('/login/')({
@@ -153,23 +149,13 @@ function RouteComponent() {
   };
 
   return (
-    <div className="relative flex h-screen max-h-screen w-screen overflow-hidden bg-white">
-      <div className="absolute left-8 top-8 flex items-center gap-x-2 2xs:left-10 2xs:top-10 md:left-12 md:top-12 lg:left-16 lg:top-16">
-        <img
-          src={BachKhoaLogo}
-          alt="BachKhoa Logo"
-          className="h-8 md:h-10 lg:h-[90px]"
-        />
-        <span className='text-5xl font-bold text-[#0329E9]'
-        >HCMUT SSO</span>
-      </div>
-      <div className=" m-auto flex size-full min-h-0 flex-col items-center justify-center gap-y-4 overflow-hidden 2xs:gap-y-5 md:gap-y-6 lg:gap-y-8 3xl:gap-y-12">
-        <h2 className="-mb-4 text-center text-[16px] font-bold text-[#0329E9] 2xs:text-[20px] md:text-[24px] xl:text-[32px] 3xl:text-[40px]">
-          ĐĂNG NHẬP
-        </h2>
-        <h3>
-          Nhập thông tin tài khoản của bạn
-        </h3>
+    <main className="flex min-h-[70vh] items-center justify-center bg-[#f5f8fc] px-4 py-10">
+      <section className="w-full max-w-lg overflow-hidden rounded-2xl border border-blue-100 bg-white shadow-[0_16px_48px_rgba(0,86,179,0.12)]">
+        <div className="border-b-4 border-[#069843] bg-[#005DCE] px-6 py-5 text-white sm:px-8">
+          <h1 className="text-xl font-bold tracking-wide sm:text-2xl">ĐĂNG NHẬP</h1>
+          <p className="mt-1 text-sm text-blue-50">Nhập thông tin tài khoản của bạn</p>
+        </div>
+        <div className="mx-auto flex flex-col items-center gap-y-4 px-6 py-7 sm:px-8">
         {/* <div className="flex size-36 items-center justify-center rounded-full bg-primary-700 2xs:size-40 md:size-56 lg:size-72 3xl:size-[360px] 4xl:size-[400px]">
           <div className="m-auto flex size-32 items-center justify-center rounded-full bg-primary-300 2xs:size-36 md:size-[200px] lg:size-[260px] 3xl:size-[320px] 4xl:size-[360px]">
             <Lottie
@@ -185,7 +171,7 @@ function RouteComponent() {
           Nền tảng học tập, hỗ trợ học sinh mạnh mẽ
         </h3> */}
         <form onSubmit={handleEmailLogin} className="flex flex-col items-center gap-y-3">
-          <div className='font-bold'>
+          <div className="w-full font-bold">
             <h4>Nhập email của bạn</h4>
             <label htmlFor="email" className="sr-only">
               Email
@@ -196,7 +182,7 @@ function RouteComponent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
-              className={`w-72 rounded border px-3 py-2 text-sm shadow-sm ${wrongCredentials ? 'border-red-500' : ''}`}
+              className={`mt-1 w-full rounded-lg border px-3 py-2.5 text-sm shadow-sm outline-none focus:border-[#005DCE] focus:ring-2 focus:ring-blue-100 ${wrongCredentials ? 'border-red-500' : 'border-slate-300'}`}
               required
             />
             {wrongCredentials && (
@@ -204,7 +190,7 @@ function RouteComponent() {
             )}
           </div>
 
-          <div className='font-bold'>
+          <div className="w-full font-bold">
             <h4>Mật khẩu</h4>
 
             <div className="relative">
@@ -218,7 +204,7 @@ function RouteComponent() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Password"
-                className={`w-72 rounded border py-2 pl-3 pr-10 text-sm shadow-sm ${wrongCredentials ? 'border-red-500' : ''}`}
+                className={`mt-1 w-full rounded-lg border py-2.5 pl-3 pr-10 text-sm shadow-sm outline-none focus:border-[#005DCE] focus:ring-2 focus:ring-blue-100 ${wrongCredentials ? 'border-red-500' : 'border-slate-300'}`}
                 required
               />
               <ViewPassworIcon className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" />
@@ -229,7 +215,7 @@ function RouteComponent() {
 
           </div>
           {/* checkbox remember this device and forgot password link */}
-          <div className="flex w-72 items-center justify-between text-sm">
+          <div className="flex w-full items-center justify-between gap-3 text-sm">
             <label className="inline-flex items-center gap-2">
               <input
                 id="rememberMe"
@@ -240,16 +226,17 @@ function RouteComponent() {
               />
               <span className="text-gray-700">Nhớ thiết bị này</span>
             </label>
-            <a
-              href={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ''}`}
+            <button
+              type="button"
+              onClick={() => toast.info('Khôi phục mật khẩu chưa được cấu hình cho bản demo.')}
               className="text-blue-600 hover:underline"
             >
               Quên mật khẩu?
-            </a>
+            </button>
           </div>
           <button
             type="submit"
-            className="w-72 rounded bg-[#0329E9] px-4 py-2 text-white hover:bg-primary-700 disabled:opacity-60"
+            className="w-full rounded-lg bg-[#005DCE] px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-[#004ba8] disabled:opacity-60"
             disabled={loading}
           >
             {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
@@ -274,16 +261,7 @@ function RouteComponent() {
           }}
         /> */}
       </div>
-      <div className="bg-primary"></div>
-      <div className="absolute right-0 top-0 max-h-44 w-1/2 rotate-180 xs:w-1/3 md:max-h-52 lg:hidden">
-        <WaveRightRotated className="size-full" />
-      </div>
-      <div className="absolute bottom-0 left-0 max-h-44 w-1/2 xs:w-1/3 md:max-h-52 lg:max-h-60 lg:w-[30%] xl:max-h-64 xl:w-1/4 2xl:max-h-72 2xl:w-1/5">
-        <WaveLeft className="size-full" />
-      </div>
-      <div className="absolute bottom-0 right-0 hidden max-h-52 w-1/3 lg:flex lg:max-h-60 lg:w-[30%] xl:max-h-64 xl:w-1/4 2xl:max-h-72 2xl:w-1/5">
-        <WaveRight className="size-full" />
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

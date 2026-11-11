@@ -1,12 +1,12 @@
-import { Link } from "@tanstack/react-router";
-import React, { useEffect, useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 
 // Tách các link nav ra mảng riêng để dễ quản lý
 const navLinks = [
-  { to: '/about', label: 'GIỚI THIỆU', width: 'w-[160px]' },
-  { to: '/papers', label: 'DIỄN BIẾN XNM', width: 'w-[200px]' },
-  { to: '/order-guidelines', label: 'TIN TỨC', width: 'w-[200px]' },
-  { to: '/contact', label: 'TƯ LIỆU & KIẾN THỨC', width: 'w-[240px]' }
+  { to: '/home' as const, hash: 'overview', label: 'GIỚI THIỆU', width: 'w-[160px]' },
+  { to: '/home' as const, hash: 'history', label: 'DIỄN BIẾN XNM', width: 'w-[200px]' },
+  { to: '/home' as const, hash: 'news', label: 'TIN TỨC', width: 'w-[200px]' },
+  { to: '/home' as const, hash: 'about-data', label: 'TƯ LIỆU & KIẾN THỨC', width: 'w-[240px]' },
 ];
 
 // --- CÁC ICON (Không thay đổi) ---
@@ -54,7 +54,8 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     >
       <nav className="flex flex-col gap-1 p-4">
         <Link 
-          to='/' 
+          to="/home"
+          hash='top'
           onClick={onClose} 
           className='rounded p-3 text-lg hover:bg-white/10' 
           style={{ fontFamily: 'UTM Black' }}
@@ -63,8 +64,9 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
         </Link>
         {navLinks.map((link) => (
           <Link
-            key={link.to}
+            key={link.hash}
             to={link.to}
+            hash={link.hash}
             onClick={onClose}
             className='rounded p-3 text-lg hover:bg-white/10'
             style={{ fontFamily: 'UTM Black' }}
@@ -80,24 +82,18 @@ function MobileMenu({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 // --- Component Subheader chính (Cập nhật) ---
 function Subheader() {
   const [scrollingDown, setScrollingDown] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     function handleScroll() {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > 50) {
-        setScrollingDown(true);
-      } else if (currentScrollY <= 0) {
-        setScrollingDown(false);
-      }
-      setLastScrollY(currentScrollY);
+      setScrollingDown(window.scrollY > 50);
     }
 
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -122,7 +118,8 @@ function Subheader() {
             {/* Nút Home (Desktop) */}
             <div className='m-2 hidden items-center rounded-full bg-white lg:flex'>
               <Link
-                to='/'
+                to='/home'
+                hash='top'
                 className='inline-flex size-12 items-center justify-center'
                 style={{
                   background: '#ffffff',
@@ -138,11 +135,11 @@ function Subheader() {
             <div className='hidden gap-0 lg:flex'>
               {navLinks.map((link) => (
                 <div
-                  key={link.to}
+                  key={link.hash}
                   className='my-1 flex items-center'
                   style={{ boxShadow: '0 6px 18px rgba(0,0,0,0.12)', padding: '0 12px' }}
                 >
-                  <Link to={link.to} className={`text-center text-white ${link.width}`} style={{ fontFamily: 'UTM Black' }}>
+                  <Link to={link.to} hash={link.hash} className={`text-center text-white ${link.width}`} style={{ fontFamily: 'UTM Black' }}>
                     {link.label}
                   </Link>
                 </div>

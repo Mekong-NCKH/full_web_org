@@ -100,51 +100,9 @@ function RouteComponent() {
   );
 
   return (
-    <main className="min-h-screen bg-[#f5f8fc] text-slate-900">
-      <header className="sticky top-0 z-[1100]">
-        <div className="border-b border-slate-100 bg-white">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-            <a href="/home#top" className="flex min-w-0 items-center gap-3 sm:gap-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-sm bg-[#075fc5] text-lg font-black tracking-tight text-white shadow-sm sm:size-16 sm:text-2xl">
-                BK
-              </span>
-              <span className="min-w-0 leading-tight">
-                <span className="block text-xl font-black tracking-tight text-[#118642] sm:text-[27px]">
-                  BK MEKONG
-                </span>
-                <span className="mt-1 block text-xs leading-5 text-slate-600 sm:text-sm">
-                  Theo dõi và phân tích tình hình xâm nhập mặn
-                </span>
-              </span>
-            </a>
-            <span className="hidden rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-right text-[11px] text-slate-600 sm:block">
-              Dữ liệu lịch sử · 2024
-            </span>
-          </div>
-        </div>
-        <nav
-          aria-label="Điều hướng chính"
-          className="border-b-4 border-[#118642] bg-[#075fc5] text-white shadow-[0_3px_10px_rgba(7,95,197,0.16)]"
-        >
-          <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-3 sm:px-6 lg:px-8">
-            <a href="/home#top" className="flex min-h-12 shrink-0 items-center px-4 text-xs font-bold uppercase hover:bg-white/15">
-              Trang chủ
-            </a>
-            <a href="/home#history" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-xs font-bold uppercase hover:bg-white/15">
-              Diễn biến XNM
-            </a>
-            <a href="/home#stations" className="flex min-h-12 shrink-0 items-center border-l border-white/10 px-4 text-xs font-bold uppercase hover:bg-white/15">
-              Bản đồ trạm
-            </a>
-            <span aria-current="page" className="flex min-h-12 shrink-0 items-center border-l border-white/10 bg-white/15 px-4 text-xs font-bold uppercase">
-              Bảng quan trắc
-            </span>
-          </div>
-        </nav>
-      </header>
-
+    <main className="min-h-[70vh] bg-[#f5f8fc] text-slate-900">
       <div className="mx-auto w-full max-w-7xl px-4 py-6 text-slate-900 sm:px-6 lg:px-8 lg:py-9">
-        <section className="mb-5 flex flex-wrap items-end justify-between gap-4 rounded-xl border border-blue-100 bg-white p-5 shadow-sm sm:p-6">
+        <section className="mb-5 flex flex-wrap items-end justify-between gap-4 rounded-xl border border-t-4 border-blue-100 border-t-[#069843] bg-white p-5 shadow-[0_8px_28px_rgba(0,86,179,0.08)] sm:p-6">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#118642]">
               Bảng quan trắc

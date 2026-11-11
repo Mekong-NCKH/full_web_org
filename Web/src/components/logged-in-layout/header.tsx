@@ -81,8 +81,8 @@ const Header = ({ user, setUser }: HeaderProps) => {
             <div className="flex items-center gap-2">
               {/* <ShoppingCartIcon className="size-9 text-primary" /> */}
               <img
-                src="/tien_giang_icon.webp "
-                alt="Logo"
+                src="/tien_giang_icon.webp"
+                alt="Biểu trưng Tiền Giang"
                 className="size-10 object-contain"
               />
               <div>
@@ -91,7 +91,7 @@ const Header = ({ user, setUser }: HeaderProps) => {
                     className="font-mono text-xl font-semibold tracking-widest text-[#0060C9]"
                     style={{ fontFamily: 'UTM Black' }}
                   >
-                    BK MÊKÔNG
+                    BK MEKONG
                   </span>
                 )}
                 {isAuthenticated && (
@@ -178,13 +178,15 @@ const Header = ({ user, setUser }: HeaderProps) => {
               </div>
 
               <div className="ml-2 shrink-0 md:ml-4">
-                <UserBanner
-                  userName={[user?.firstName, user?.lastName]
-                    .filter(Boolean)
-                    .join(' ')}
-                  unitInfo={user?.email ?? ''}
-                  avatarSrc={user?.picture ?? ''}
-                />
+                <Link to="/profile" aria-label="Xem thông tin tài khoản">
+                  <UserBanner
+                    userName={[user?.firstName, user?.lastName]
+                      .filter(Boolean)
+                      .join(' ')}
+                    unitInfo={user?.email ?? ''}
+                    avatarSrc={user?.picture ?? ''}
+                  />
+                </Link>
                 <button
                   type="button"
                   onClick={() => void logout()}
