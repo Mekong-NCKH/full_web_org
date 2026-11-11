@@ -610,11 +610,12 @@ function RouteComponent() {
                 Giám sát theo vị trí
               </p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#075fc5]">
-                Bản đồ trạm quan trắc
+                Bản đồ độ mặn theo vùng
               </h2>
             </div>
-            <p className="text-xs text-slate-500">
-              Nguồn tọa độ: cong_locations.csv
+            <p className="max-w-xl text-xs leading-5 text-slate-500">
+              Màu vùng cập nhật theo thời điểm đang chọn và số đo tại các trạm
+              trong vùng. Khu vực chưa có trạm đo được xác minh sẽ giữ màu xám.
             </p>
           </div>
 
@@ -633,6 +634,7 @@ function RouteComponent() {
                   referenceStatuses={referenceStatuses}
                   ruleSetVersion={referenceRuleSet?.version ?? null}
                   dataMode={dataMode}
+                  selectedAt={selectedAt}
                   selectedStationId={selectedStationId}
                   onStationSelect={setSelectedStationId}
                   loading={loading}
