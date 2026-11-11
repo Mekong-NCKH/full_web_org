@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+.leaflet-tooltip.salinity-hover-tooltip {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  white-space: normal;
+}
+
+.leaflet-tooltip-top.salinity-hover-tooltip::before {
+  display: none;
+}
+
 .pagination-btn {
   @apply p-1 rounded transition-colors bg-white text-[#0329E9] hover:bg-blue-600 hover:text-white;
 }

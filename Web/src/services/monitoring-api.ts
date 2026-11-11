@@ -1,8 +1,6 @@
 import type {
   ApiEnvelope,
   DataRange,
-  GISReferenceRuleSet,
-  GISReferenceRuleSetResponse,
   Observation,
   ObservationSeriesResponse,
   SnapshotResponse,
@@ -65,16 +63,6 @@ export async function fetchSnapshot(
     `/api/v1/observations/snapshot?${query.toString()}`,
     signal,
   );
-}
-
-export async function fetchGISReferenceRules(
-  signal?: AbortSignal,
-): Promise<GISReferenceRuleSet> {
-  const response = await getJson<GISReferenceRuleSetResponse>(
-    '/api/v1/gis/reference-rules',
-    signal,
-  );
-  return response.data;
 }
 
 export async function fetchObservationSeries(

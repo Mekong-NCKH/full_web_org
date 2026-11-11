@@ -14,7 +14,6 @@ import {
 
 import {
   fetchDataRange,
-  fetchGISReferenceRules,
   fetchObservationHistory,
   fetchSnapshot,
   fetchStations,
@@ -23,8 +22,6 @@ import {
 } from '@/services/monitoring-api';
 import type {
   DataRange,
-  GISReferenceStatus,
-  GISReferenceRuleSet,
   Observation,
   SelectedStationReading,
   SnapshotResponse,
@@ -32,7 +29,6 @@ import type {
 } from '@/types/monitoring.type';
 
 import SalinityNewsSwiper from './components/salinity-news-swipper';
-import { evaluateGISReferenceRule } from './gis-reference';
 
 const InteractiveMap = lazy(() => import('./components/interactive-map'));
 
@@ -292,9 +288,6 @@ function RouteComponent() {
     'historical',
   );
   const [isReplaying, setIsReplaying] = useState(false);
-  const [referenceRuleSet, setReferenceRuleSet] =
-    useState<GISReferenceRuleSet | null>(null);
-  const [referenceRulesLoading, setReferenceRulesLoading] = useState(true);
   const [selectedStationId, setSelectedStationId] = useState<string | null>(
     null,
   );
@@ -462,19 +455,6 @@ function RouteComponent() {
   );
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchGISReferenceRules(controller.signal)
-      .then(setReferenceRuleSet)
-      .catch(() => {
-        if (!controller.signal.aborted) setReferenceRuleSet(null);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setReferenceRulesLoading(false);
-      });
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
     if (!isReplaying || !selectedAt || replayTimes.length === 0) return;
     const timer = window.setTimeout(() => {
       const nextTime = replayTimes.find(
@@ -488,21 +468,6 @@ function RouteComponent() {
     }, 1000);
     return () => window.clearTimeout(timer);
   }, [isReplaying, replayTimes, selectedAt]);
-
-  const referenceStatuses = useMemo(
-    () =>
-      Object.fromEntries(
-        stations.map((station) => [
-          station.id,
-          evaluateGISReferenceRule(
-            referenceRuleSet,
-            station.id,
-            observationsAtSelection[station.id]?.observation ?? null,
-          ),
-        ]),
-      ) as Record<string, GISReferenceStatus>,
-    [observationsAtSelection, referenceRuleSet, stations],
-  );
 
   const salinityChartData = useMemo(
     () =>
@@ -610,11 +575,13 @@ function RouteComponent() {
                 Giám sát theo vị trí
               </p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#075fc5]">
-                Bản đồ trạm quan trắc
+                Bản đồ độ mặn theo vùng
               </h2>
             </div>
-            <p className="text-xs text-slate-500">
-              Nguồn tọa độ: cong_locations.csv
+            <p className="max-w-xl text-xs leading-5 text-slate-500">
+              Màu mỗi huyện lấy theo trạm gần nhất tại thời điểm đang chọn.
+              Rê chuột để xem trạm nguồn; huyện chưa có số liệu hợp lệ sẽ giữ
+              màu xám.
             </p>
           </div>
 
@@ -630,9 +597,7 @@ function RouteComponent() {
                 <InteractiveMap
                   stations={stations}
                   observations={observationsAtSelection}
-                  referenceStatuses={referenceStatuses}
-                  ruleSetVersion={referenceRuleSet?.version ?? null}
-                  dataMode={dataMode}
+                  selectedAt={selectedAt}
                   selectedStationId={selectedStationId}
                   onStationSelect={setSelectedStationId}
                   loading={loading}
@@ -755,7 +720,6 @@ function RouteComponent() {
                     };
                     const observation = reading.observation;
                     const salinity = observation?.salinity.value ?? null;
-                    const referenceStatus = referenceStatuses[station.id];
                     const tone = getObservationTone(
                       reading,
                       historyLoading,
@@ -818,29 +782,6 @@ function RouteComponent() {
                         <p className="mt-3 text-[10px] text-slate-500">
                           {recordDescription}
                         </p>
-                        <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-[10px] font-semibold uppercase tracking-wide text-indigo-800">
-                              Mô phỏng tham khảo v
-                              {referenceRuleSet?.version ?? '…'}
-                            </span>
-                            <span className="text-xs font-semibold text-indigo-950">
-                              {referenceStatus?.label ??
-                                (referenceRulesLoading
-                                  ? 'Đang tải quy tắc'
-                                  : 'Không có kết quả')}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-[10px] leading-4 text-indigo-800">
-                            Chưa xác nhận vận hành; không phải trạng thái thực
-                            tế của cửa.
-                          </p>
-                          {referenceStatus?.basis && (
-                            <p className="mt-1 text-[10px] leading-4 text-indigo-700">
-                              Căn cứ: {referenceStatus.basis}
-                            </p>
-                          )}
-                        </div>
                       </button>
                     );
                   })
