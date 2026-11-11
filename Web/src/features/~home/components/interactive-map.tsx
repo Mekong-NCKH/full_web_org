@@ -9,6 +9,7 @@ import {
   GeoJSON,
   MapContainer,
   Popup,
+  Tooltip,
   useMap,
 } from 'react-leaflet';
 
@@ -20,11 +21,7 @@ import type {
   GeoFeatureProperties,
   ZoneType,
 } from '@/types/home.type';
-import type {
-  GISReferenceStatus,
-  SelectedStationReading,
-  Station,
-} from '@/types/monitoring.type';
+import type { SelectedStationReading, Station } from '@/types/monitoring.type';
 import 'leaflet/dist/leaflet.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -33,14 +30,46 @@ setWorkerUrl(workerUrl);
 const openFreeMapAttribution =
   '<a href="https://openfreemap.org/">OpenFreeMap</a>, <a href="https://www.openmaptiles.org/">© OpenMapTiles</a>, Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
-const riskColors = {
-  danger: '#df4b4b',
-  caution: '#e8b529',
-  safe: '#24965c',
-  unknown: '#94a3b8',
+const riskPalette = {
+  danger: {
+    fill: '#f2c4d0',
+    stroke: '#c43c61',
+    header: '#c43c61',
+    surface: '#fff3f6',
+    label: 'VƯỢT MỐC CAO',
+    message: 'Độ mặn đạt từ 4 g/L theo mốc tham khảo.',
+    mark: '!',
+  },
+  caution: {
+    fill: '#fff0b3',
+    stroke: '#d4aa26',
+    header: '#d4aa26',
+    surface: '#fffbed',
+    label: 'CẦN CHÚ Ý',
+    message: 'Độ mặn từ 1 đến dưới 4 g/L theo mốc tham khảo.',
+    mark: '!',
+  },
+  safe: {
+    fill: '#cfe8d4',
+    stroke: '#3f9659',
+    header: '#3f9659',
+    surface: '#f1f9f2',
+    label: 'DƯỚI MỐC',
+    message: 'Độ mặn dưới 1 g/L theo mốc tham khảo.',
+    mark: '✓',
+  },
+  unknown: {
+    fill: '#e2e8f0',
+    stroke: '#94a3b8',
+    header: '#64748b',
+    surface: '#f8fafc',
+    label: 'CHƯA CÓ SỐ LIỆU',
+    message: 'Chưa có độ mặn hợp lệ để phân loại.',
+    mark: '·',
+  },
 } as const;
 
-type RiskLevel = keyof typeof riskColors;
+type RiskLevel = keyof typeof riskPalette;
 type RegionFeature = Feature<Geometry, GeoFeatureProperties>;
 
 type StationSample = {
@@ -54,10 +83,19 @@ type StationSample = {
 
 type ZoneSummary = {
   zoneName: string;
-  regions: string[];
   risk: RiskLevel;
   sampleCount: number;
   stationCount: number;
+  worstSample: StationSample | null;
+};
+
+type RegionSummary = {
+  districtName: string;
+  zoneName: string | null;
+  risk: RiskLevel;
+  sampleCount: number;
+  stationCount: number;
+  distanceKm: number | null;
   worstSample: StationSample | null;
   samples: StationSample[];
 };
@@ -65,9 +103,6 @@ type ZoneSummary = {
 type InteractiveMapProps = {
   stations: Station[];
   observations: Record<string, SelectedStationReading>;
-  referenceStatuses: Record<string, GISReferenceStatus>;
-  ruleSetVersion: string | null;
-  dataMode: 'historical' | 'replay';
   selectedAt: Date | null;
   selectedStationId: string | null;
   onStationSelect: (stationId: string) => void;
@@ -154,6 +189,23 @@ function featureContainsPoint(
   return false;
 }
 
+function distanceKm(
+  fromLatitude: number,
+  fromLongitude: number,
+  toLatitude: number,
+  toLongitude: number,
+): number {
+  const radians = (degrees: number) => (degrees * Math.PI) / 180;
+  const latitudeDelta = radians(toLatitude - fromLatitude);
+  const longitudeDelta = radians(toLongitude - fromLongitude);
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(radians(fromLatitude)) *
+      Math.cos(radians(toLatitude)) *
+      Math.sin(longitudeDelta / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+}
+
 function classifySalinity(value: number | null): RiskLevel {
   if (value === null || !Number.isFinite(value) || value < 0) return 'unknown';
   if (value >= 4000) return 'danger';
@@ -164,13 +216,13 @@ function classifySalinity(value: number | null): RiskLevel {
 function riskLabel(risk: RiskLevel): string {
   switch (risk) {
     case 'danger':
-      return 'Nguy cơ cao';
+      return 'Vượt mốc cao';
     case 'caution':
       return 'Cần chú ý';
     case 'safe':
-      return 'An toàn theo mốc tham khảo';
+      return 'Dưới mốc tham khảo';
     default:
-      return 'Chưa có số đo hợp lệ';
+      return 'Chưa có số liệu';
   }
 }
 
@@ -178,6 +230,10 @@ function formatValue(value: number | null, unit: string): string {
   return value === null
     ? 'Chưa có dữ liệu'
     : value.toLocaleString('vi-VN', { maximumFractionDigits: 2 }) + ' ' + unit;
+}
+
+function formatSalinity(value: number | null): string {
+  return value === null ? '—' : formatValue(value / 1000, 'g/L');
 }
 
 function formatTimestamp(value: string | Date | undefined): string {
@@ -189,6 +245,63 @@ function formatTimestamp(value: string | Date | undefined): string {
     timeStyle: 'short',
     timeZone: 'Asia/Ho_Chi_Minh',
   }).format(date);
+}
+
+function SalinityStatusCard({
+  station,
+  reading,
+}: {
+  station: Station;
+  reading: SelectedStationReading;
+}) {
+  const observation = reading.observation;
+  const salinity = observation?.salinity.value ?? null;
+  const risk = classifySalinity(salinity);
+  const palette = riskPalette[risk];
+
+  return (
+    <div
+      className="relative w-[236px] overflow-hidden rounded-xl border shadow-lg"
+      style={{ borderColor: palette.stroke, backgroundColor: palette.surface }}
+    >
+      <div
+        className="px-3 py-1.5 text-center text-[10px] font-bold tracking-wide text-white"
+        style={{ backgroundColor: palette.header }}
+      >
+        {station.name.toLocaleUpperCase('vi-VN')}
+      </div>
+      <div className="relative px-3 py-2.5 pr-10 text-[11px] text-slate-800">
+        <div className="grid grid-cols-[56px_1fr] gap-1">
+          <span className="font-semibold">Độ mặn</span>
+          <span>{formatSalinity(salinity)}</span>
+          <span className="font-semibold">Mực nước</span>
+          <span>{formatValue(observation?.waterLevel.value ?? null, 'm')}</span>
+        </div>
+        <span
+          aria-hidden="true"
+          className="absolute right-2 top-0 text-[38px] font-black leading-none"
+          style={{ color: palette.header }}
+        >
+          {palette.mark}
+        </span>
+        <p
+          className="mt-2 max-w-[176px] text-[10px] font-semibold leading-4"
+          style={{ color: palette.header }}
+        >
+          {palette.message}
+        </p>
+        <p className="mt-1 text-[9px] leading-3 text-slate-500">
+          {observation
+            ? 'Ghi nhận: ' +
+              formatTimestamp(observation.observedAt) +
+              (reading.freshness === 'stale'
+                ? ' · cũ hơn ' + SNAPSHOT_MAX_AGE_HOURS + ' giờ'
+                : '')
+            : 'Chưa có bản ghi tại thời điểm chọn'}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function escapeHtml(value: string): string {
@@ -204,11 +317,11 @@ function escapeHtml(value: string): string {
   });
 }
 
-function buildZoneSummaries(
+function buildMapSummaries(
   geoData: GeoFeatureCollection | null,
   stations: Station[],
   observations: Record<string, SelectedStationReading>,
-): ZoneSummary[] {
+): { regions: RegionSummary[]; zones: ZoneSummary[] } {
   const zones = regionContext.zones as ZoneType[];
   const samples: StationSample[] = [];
 
@@ -221,11 +334,9 @@ function buildZoneSummaries(
           station.location.latitude,
         ),
       ) as RegionFeature | undefined;
-      if (!feature) return;
 
-      const name = districtName(feature);
-      const zone = zoneForDistrict(name, zones);
-      if (!zone) return;
+      const name = feature ? districtName(feature) : 'Chưa gán huyện';
+      const zone = feature ? zoneForDistrict(name, zones) : undefined;
 
       const reading = observations[station.id] ?? {
         observation: null,
@@ -235,7 +346,7 @@ function buildZoneSummaries(
       samples.push({
         station,
         districtName: name,
-        zoneName: zone.zoneName,
+        zoneName: zone?.zoneName ?? 'Chưa phân vùng',
         reading,
         salinity,
         risk: classifySalinity(salinity),
@@ -243,10 +354,46 @@ function buildZoneSummaries(
     });
   }
 
-  return zones.map((zone) => {
-    const zoneSamples = samples.filter(
-      (sample) => sample.zoneName === zone.zoneName,
+  const regions = (geoData?.features ?? []).map((feature) => {
+    const name = districtName(feature as RegionFeature);
+    const bounds = L.geoJSON(feature as RegionFeature).getBounds();
+    const center = bounds.getCenter();
+    const nearest = samples.reduce<{
+      sample: StationSample;
+      distance: number;
+    } | null>((closest, sample) => {
+      const distance = distanceKm(
+        center.lat,
+        center.lng,
+        sample.station.location.latitude,
+        sample.station.location.longitude,
+      );
+      return !closest || distance < closest.distance
+        ? { sample, distance }
+        : closest;
+    }, null);
+    const nearestSample = nearest?.sample ?? null;
+    const risk = nearestSample?.risk ?? 'unknown';
+
+    return {
+      districtName: name,
+      zoneName: zoneForDistrict(name, zones)?.zoneName ?? null,
+      risk,
+      sampleCount: risk === 'unknown' ? 0 : 1,
+      stationCount: nearestSample ? 1 : 0,
+      distanceKm: nearest?.distance ?? null,
+      worstSample: nearestSample,
+      samples: nearestSample ? [nearestSample] : [],
+    };
+  });
+
+  const zoneSummaries = zones.map((zone) => {
+    const zoneRegions = regions.filter(
+      (region) => region.zoneName === zone.zoneName,
     );
+    const zoneSamples = zoneRegions
+      .map((region) => region.worstSample)
+      .filter((sample): sample is StationSample => sample !== null);
     const measuredSamples = zoneSamples.filter(
       (sample) => sample.risk !== 'unknown',
     );
@@ -260,14 +407,16 @@ function buildZoneSummaries(
 
     return {
       zoneName: zone.zoneName,
-      regions: zone.regions,
       risk: worstSample?.risk ?? 'unknown',
-      sampleCount: measuredSamples.length,
-      stationCount: zoneSamples.length,
+      sampleCount: zoneRegions.filter((region) => region.sampleCount > 0)
+        .length,
+      stationCount: new Set(zoneSamples.map((sample) => sample.station.id))
+        .size,
       worstSample,
-      samples: zoneSamples,
     };
   });
+
+  return { regions, zones: zoneSummaries };
 }
 
 function BaseMap() {
@@ -329,111 +478,172 @@ function FitProvinceOrZone({
   return null;
 }
 
+function regionHoverCard(
+  region: RegionSummary,
+  selectedAt: Date | null,
+): string {
+  const palette = riskPalette[region.risk];
+  const sample = region.worstSample;
+  const sampleInfo = sample
+    ? '<div style="margin-top:7px;color:#475569">Trạm gần nhất: ' +
+      escapeHtml(sample.station.name) +
+      '</div><div style="color:#64748b">Ghi nhận: ' +
+      escapeHtml(formatTimestamp(sample.reading.observation?.observedAt)) +
+      '</div><div style="color:#64748b">Cách tâm huyện khoảng ' +
+      (region.distanceKm?.toLocaleString('vi-VN', {
+        maximumFractionDigits: 1,
+      }) ?? '—') +
+      ' km</div>'
+    : region.stationCount > 0
+      ? '<div style="margin-top:7px;color:#64748b">Trạm có trong khu vực nhưng chưa có số đo hợp lệ.</div>'
+      : '<div style="margin-top:7px;color:#64748b">Chưa có trạm đo xác minh trong khu vực này.</div>';
+  const border = escapeHtml(palette.stroke);
+  const background = escapeHtml(palette.surface);
+  const header = escapeHtml(palette.header);
+
+  return [
+    '<div style="width:228px;overflow:hidden;border:1px solid ',
+    border,
+    ';border-radius:12px;background:',
+    background,
+    ';box-shadow:0 10px 24px rgba(15,23,42,.18);font:12px/1.45 Arial,sans-serif">',
+    '<div style="padding:5px 10px;background:',
+    header,
+    ';color:#fff;text-align:center;font-size:10px;font-weight:700;letter-spacing:.04em">',
+    escapeHtml(region.zoneName ?? 'TIỀN GIANG'),
+    '</div>',
+    '<div style="position:relative;padding:9px 12px">',
+    '<strong style="font-size:14px;color:#0f172a">',
+    escapeHtml(region.districtName),
+    '</strong>',
+    '<div style="margin-top:4px;color:',
+    header,
+    ';font-weight:700">',
+    escapeHtml(riskLabel(region.risk)),
+    '</div>',
+    '<div style="margin-top:4px">Độ mặn: ',
+    escapeHtml(formatSalinity(sample?.salinity ?? null)),
+    '</div>',
+    sampleInfo,
+    '<div style="margin-top:7px;color:#64748b;font-size:10px">Chọn mốc: ',
+    escapeHtml(formatTimestamp(selectedAt ?? undefined)),
+    ' · Màu ước tính theo trạm gần nhất, không phải số đo trực tiếp tại huyện.</div>',
+    '</div></div>',
+  ].join('');
+}
+
+function findRegionSummary(
+  feature: RegionFeature | undefined,
+  summaries: RegionSummary[],
+): RegionSummary | undefined {
+  if (!feature) return undefined;
+  const name = normalizeName(districtName(feature));
+  return summaries.find((item) => normalizeName(item.districtName) === name);
+}
+
 function DistrictLayer({
   geoData,
-  zoneSummaries,
+  regionSummaries,
   selectedAt,
 }: {
   geoData: GeoFeatureCollection;
-  zoneSummaries: ZoneSummary[];
+  regionSummaries: RegionSummary[];
   selectedAt: Date | null;
 }) {
   const layerRef = useRef<L.GeoJSON | null>(null);
-  const zones = regionContext.zones as ZoneType[];
 
   const styleFeature = useMemo(
-    () => (feature?: RegionFeature) => {
-      const zone = feature
-        ? zoneForDistrict(districtName(feature), zones)
-        : undefined;
-      const summary = zoneSummaries.find(
-        (item) => item.zoneName === zone?.zoneName,
-      );
-      const risk = summary?.risk ?? 'unknown';
-
-      return {
-        color: '#ffffff',
-        weight: 1.5,
-        opacity: 0.95,
-        fillColor: riskColors[risk],
-        fillOpacity: risk === 'unknown' ? 0.25 : 0.58,
-      };
-    },
-    [zoneSummaries, zones],
+    () =>
+      (feature?: RegionFeature): L.PathOptions => {
+        const summary = findRegionSummary(feature, regionSummaries);
+        const palette = riskPalette[summary?.risk ?? 'unknown'];
+        return {
+          color: palette.stroke,
+          weight: 1.7,
+          opacity: 0.96,
+          fillColor: palette.fill,
+          fillOpacity: summary?.risk === 'unknown' ? 0.34 : 0.88,
+        };
+      },
+    [regionSummaries],
   );
 
   useEffect(() => {
+    const cleanups: Array<() => void> = [];
     layerRef.current?.eachLayer((layer) => {
-      const districtLayer = layer as L.Path & {
-        feature?: RegionFeature;
-      };
+      const districtLayer = layer as L.Path & { feature?: RegionFeature };
       const feature = districtLayer.feature;
       if (!feature) return;
 
-      const name = districtName(feature);
-      const zone = zoneForDistrict(name, zones);
-      const summary = zoneSummaries.find(
-        (item) => item.zoneName === zone?.zoneName,
-      );
-      const sample = summary?.worstSample;
-      const dateText = escapeHtml(formatTimestamp(selectedAt ?? undefined));
-      const sampleDetails = sample
-        ? '<div>Trạm: ' +
-          escapeHtml(sample.station.name) +
-          ' · ' +
-          escapeHtml(sample.districtName) +
-          '</div><div>Ghi nhận: ' +
-          escapeHtml(formatTimestamp(sample.reading.observation?.observedAt)) +
-          '</div>'
-        : summary?.stationCount
-          ? '<div>Đã có trạm trong vùng nhưng chưa có số đo hợp lệ để phân loại.</div>'
-          : '<div>Chưa có trạm đo đã xác minh trong vùng.</div>';
-      const content = [
-        '<div style="min-width:220px;font-size:13px;line-height:1.55">',
-        '<strong style="font-size:15px">',
-        escapeHtml(name),
-        '</strong>',
-        '<div style="color:#475569">',
-        escapeHtml(zone?.zoneName ?? 'Chưa phân vùng'),
-        '</div>',
-        '<div style="margin-top:6px"><b>',
-        escapeHtml(riskLabel(summary?.risk ?? 'unknown')),
-        '</b></div>',
-        '<div>Độ mặn cao nhất trong vùng: ',
-        escapeHtml(formatValue(sample?.salinity ?? null, 'mg/L')),
-        '</div>',
-        sampleDetails,
-        '<div style="margin-top:6px;color:#64748b;font-size:11px">Thời điểm chọn: ',
-        dateText,
-        '</div>',
-        '<div style="margin-top:6px;color:#64748b;font-size:11px">Màu toàn vùng theo số đo cao nhất của các trạm trong vùng; chỉ mang tính tham khảo, không phải cảnh báo vận hành.</div>',
-        '</div>',
-      ].join('');
-      districtLayer.bindPopup(content);
+      const region = findRegionSummary(feature, regionSummaries);
+      if (!region) return;
+      const baseStyle = styleFeature(feature);
+      districtLayer.bindTooltip(regionHoverCard(region, selectedAt), {
+        className: 'salinity-hover-tooltip',
+        direction: 'top',
+        opacity: 1,
+        sticky: true,
+      });
+      districtLayer.bindPopup(regionHoverCard(region, selectedAt));
+
+      const handleMouseOver = () => {
+        districtLayer.setStyle({
+          ...baseStyle,
+          weight: 3,
+          fillOpacity: 0.98,
+        });
+        districtLayer.bringToFront();
+      };
+      const handleMouseOut = () => districtLayer.setStyle(baseStyle);
+      districtLayer.on('mouseover', handleMouseOver);
+      districtLayer.on('mouseout', handleMouseOut);
+      cleanups.push(() => {
+        districtLayer.off('mouseover', handleMouseOver);
+        districtLayer.off('mouseout', handleMouseOut);
+        districtLayer.unbindTooltip();
+        districtLayer.unbindPopup();
+      });
     });
-  }, [geoData, selectedAt, zoneSummaries, zones]);
+
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [geoData, regionSummaries, selectedAt, styleFeature]);
 
   return <GeoJSON ref={layerRef} data={geoData} style={styleFeature} />;
+}
+
+function RegionSwatch({ risk }: { risk: RiskLevel }) {
+  const palette = riskPalette[risk];
+  return (
+    <svg aria-hidden="true" className="h-3.5 w-5 shrink-0" viewBox="0 0 24 16">
+      <path
+        d="M2 5 7 4 9 1 20 3 21 11 23 14 12 15 7 12 3 12Z"
+        fill={palette.fill}
+        stroke={palette.stroke}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 function MapLegend({ readingLoading }: { readingLoading: boolean }) {
   return (
     <div className="absolute bottom-3 left-3 z-[500] flex max-w-[calc(100%-1.5rem)] flex-wrap gap-x-3 gap-y-1.5 rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-[10px] text-slate-700 shadow-sm backdrop-blur sm:text-[11px]">
       <span className="flex items-center gap-1.5">
-        <i className="size-2.5 rounded-full bg-[#df4b4b]" />
-        Đỏ ≥ 4.000 mg/L
+        <RegionSwatch risk="danger" />
+        Đỏ ≥ 4 g/L
       </span>
       <span className="flex items-center gap-1.5">
-        <i className="size-2.5 rounded-full bg-[#e8b529]" />
-        Vàng 1.000–&lt;4.000
+        <RegionSwatch risk="caution" />
+        Vàng 1–&lt;4 g/L
       </span>
       <span className="flex items-center gap-1.5">
-        <i className="size-2.5 rounded-full bg-[#24965c]" />
-        Xanh &lt;1.000
+        <RegionSwatch risk="safe" />
+        Xanh &lt;1 g/L
       </span>
       <span className="flex items-center gap-1.5">
-        <i className="size-2.5 rounded-full bg-slate-400" />
-        Xám: chưa có số đo
+        <RegionSwatch risk="unknown" />
+        Xám: trạm gần nhất chưa có số đo
       </span>
       {readingLoading && (
         <span className="text-slate-500">Đang tải số liệu…</span>
@@ -445,9 +655,6 @@ function MapLegend({ readingLoading }: { readingLoading: boolean }) {
 export default function InteractiveMap({
   stations,
   observations,
-  referenceStatuses,
-  ruleSetVersion,
-  dataMode,
   selectedAt,
   selectedStationId,
   onStationSelect,
@@ -474,10 +681,11 @@ export default function InteractiveMap({
     return () => controller.abort();
   }, []);
 
-  const zoneSummaries = useMemo(
-    () => buildZoneSummaries(geoData, stations, observations),
+  const mapSummaries = useMemo(
+    () => buildMapSummaries(geoData, stations, observations),
     [geoData, observations, stations],
   );
+  const { regions: regionSummaries, zones: zoneSummaries } = mapSummaries;
 
   return (
     <div className="relative h-[500px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[560px]">
@@ -499,7 +707,7 @@ export default function InteractiveMap({
         {geoData && (
           <DistrictLayer
             geoData={geoData}
-            zoneSummaries={zoneSummaries}
+            regionSummaries={regionSummaries}
             selectedAt={selectedAt}
           />
         )}
@@ -509,19 +717,10 @@ export default function InteractiveMap({
             freshness: 'missing',
           };
           const observation = reading.observation;
-          const referenceStatus = referenceStatuses[station.id];
           const salinity = observation?.salinity.value ?? null;
           const risk = classifySalinity(salinity);
-          const color = riskColors[risk];
+          const palette = riskPalette[risk];
           const selected = station.id === selectedStationId;
-          const readingDescription =
-            reading.freshness === 'stale'
-              ? 'Bản ghi cũ hơn ' + SNAPSHOT_MAX_AGE_HOURS + ' giờ'
-              : reading.freshness === 'fresh'
-                ? 'Bản ghi trong ' + SNAPSHOT_MAX_AGE_HOURS + ' giờ'
-                : readingLoading
-                  ? 'Đang tải lịch sử…'
-                  : 'Không có bản ghi trước thời điểm đã chọn';
 
           return (
             <CircleMarker
@@ -530,49 +729,22 @@ export default function InteractiveMap({
               radius={selected ? 11 : 8}
               pathOptions={{
                 color: selected ? '#064f9f' : '#ffffff',
-                fillColor: color,
+                fillColor: palette.stroke,
                 fillOpacity: 0.98,
                 weight: selected ? 4 : 2.5,
               }}
               eventHandlers={{ click: () => onStationSelect(station.id) }}
             >
+              <Tooltip
+                direction="top"
+                offset={[0, -12]}
+                opacity={1}
+                className="salinity-hover-tooltip"
+              >
+                <SalinityStatusCard station={station} reading={reading} />
+              </Tooltip>
               <Popup>
-                <div className="min-w-52 space-y-1.5 text-sm">
-                  <div className="font-semibold text-slate-900">
-                    {station.name}
-                  </div>
-                  <div className="font-medium" style={{ color }}>
-                    {riskLabel(risk)} · {formatValue(salinity, 'mg/L')}
-                  </div>
-                  <div className="text-slate-600">
-                    Mực nước:{' '}
-                    {formatValue(observation?.waterLevel.value ?? null, 'm')}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    {observation
-                      ? readingDescription +
-                        ': ' +
-                        formatTimestamp(observation.observedAt)
-                      : readingDescription}
-                  </div>
-                  <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 p-2">
-                    <div className="font-medium text-blue-900">
-                      Mô phỏng tham khảo v{ruleSetVersion ?? '…'}:{' '}
-                      {referenceStatus?.label ?? 'Đang tải quy tắc'}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-blue-800">
-                      {dataMode === 'replay'
-                        ? 'Phát lại dữ liệu lịch sử'
-                        : 'Dữ liệu lịch sử'}{' '}
-                      · Chưa xác nhận vận hành; không phải trạng thái thực tế.
-                    </div>
-                    {referenceStatus?.basis && (
-                      <div className="mt-1 text-[10px] text-blue-700">
-                        Căn cứ: {referenceStatus.basis}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <SalinityStatusCard station={station} reading={reading} />
               </Popup>
             </CircleMarker>
           );
@@ -614,7 +786,7 @@ export default function InteractiveMap({
               >
                 <i
                   className="size-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: riskColors[zone.risk] }}
+                  style={{ backgroundColor: riskPalette[zone.risk].stroke }}
                 />
                 <span className="min-w-0">
                   <span className="block truncate text-[10px] font-semibold text-slate-800">
@@ -623,7 +795,9 @@ export default function InteractiveMap({
                   <span className="block truncate text-[9px] text-slate-500">
                     {zone.sampleCount > 0
                       ? zone.sampleCount +
-                        ' trạm có số liệu · ' +
+                        ' huyện · ' +
+                        zone.stationCount +
+                        ' trạm gần nhất · ' +
                         riskLabel(zone.risk)
                       : zone.stationCount > 0
                         ? 'Trạm chưa có số đo hợp lệ'
