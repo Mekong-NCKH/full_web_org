@@ -21,7 +21,7 @@
   },
   "runner": {
     "filename": "stage5-forecast-baseline.py",
-    "sha256": "d72749c637f5253e062c77d1f872d676d6cb0831585c5868472d0de2b8ac6d5e"
+    "sha256": "1b7fac19cbe62a3a52bb718627cfaec70cedecd8bc16476655003b5072ed81f4"
   },
   "protocol": {
     "data_rows_per_station": 1464,
