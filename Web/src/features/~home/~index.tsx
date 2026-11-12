@@ -28,6 +28,7 @@ import type {
   Station,
 } from '@/types/monitoring.type';
 
+import ForecastResearchPanel from './components/forecast-research-panel';
 import SalinityNewsSwiper from './components/salinity-news-swipper';
 
 const InteractiveMap = lazy(() => import('./components/interactive-map'));
@@ -527,6 +528,12 @@ function RouteComponent() {
                 Bản đồ và số liệu lịch sử giúp bạn xem diễn biến độ mặn, mực
                 nước theo từng trạm trong khu vực Gò Công.
               </p>
+              <a
+                href="#forecast-research"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#075fc5] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                Xem nghiên cứu dự báo <span aria-hidden="true">↓</span>
+              </a>
             </div>
             <div className="rounded-xl border border-blue-100 bg-[#f5faff] p-5">
               <div className="flex items-center justify-between gap-3">
@@ -858,6 +865,8 @@ function RouteComponent() {
             />
           </div>
         </section>
+
+        <ForecastResearchPanel />
 
         <section id="news" className="mt-10 scroll-mt-32">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">

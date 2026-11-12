@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "stage": "local-paper-reproduction-audit",
+  "classification": "offline_research_evidence",
+  "observation_and_gis_paper": {
+    "paper": {
+      "filename": "Chi_et_al___IAAA_2026_Paper.pdf",
+      "sha256": "f38ff2d2430ae12a7c7c622f31e0e840a03c5cce7fe232694b5fe9058d12ac99"
+    },
+    "status": "source_profile_reproduced; headline_decision_metrics_not_reproducible",
+    "source_data": {
+      "filename": "converted_long_format.csv",
+      "sha256": "6b43c56b0e2c9c34ee0a2251e676a902c4f0eb7bef53f049acdbb172870ce69a",
+      "rows": 52330,
+      "distinct_timestamps": 5815,
+      "distinct_calendar_days": 243,
+      "start": "2024-01-01 00:00:00",
+      "end": "2024-08-30 06:00:00",
+      "raw_station_streams": 9,
+      "normalized_station_names": 8,
+      "coordinate_records": 7,
+      "normalized_station_names_without_coordinates": 2,
+      "normalized_coordinate_duplicate_station_timestamp_keys": 5814,
+      "duplicate_keys_with_conflicting_salinity_values": 5812,
+      "note": "Two source streams normalize to one approved gate name at the same coordinate; a leave-one-gate-out split must remove all streams for that physical gate together.",
+      "approved_station_scope": {
+        "verified_gate_count": 3,
+        "source_stream_count_for_those_gates": 4,
+        "salinity_unit_in_source": "g/L"
+      }
+    },
+    "paper_reported_results_not_recomputed": {
+      "decision_instances": 2160,
+      "operator_agreement_percent": {
+        "ground_only": 68.2,
+        "aerial_ground": 79.5
+      },
+      "threshold_violation_percent": {
+        "ground_only": 12.4,
+        "aerial_ground": 6.7
+      },
+      "switching_rate": {
+        "ground_only": 0.31,
+        "aerial_ground": 0.22
+      }
+    },
+    "reproducibility_gaps": [
+      "The paper describes operator preference as the reference but no operator-labelled decisions or historical operation records are present in the available data files.",
+      "The paper does not fully specify IDW power/search neighborhood, the normalization of ground and interpolated salinity, uncertainty sigma, or local safe-threshold values needed to reproduce the risk score and violation labels.",
+      "The local map prototype scripts do not implement the paper's stated risk equation or provide its reported metric calculations.",
+      "The paper reports 2,160 decisions, while the available source spans 243 calendar days and contains duplicate same-gate streams; the exact day/gate filtering that yields the reported count is not documented.",
+      "IDW leave-one-out must exclude every record at the held-out physical gate, not only one duplicate source row, or the normalized duplicate stream leaks the answer at the same coordinates."
+    ],
+    "reproduction_boundary": "Data counts and source coverage were recalculated. Decision agreement, safety, and stability figures remain claims from the paper because their labels and complete algorithm settings are unavailable."
+  },
+  "time_series_decomposition_paper": {
+    "paper": {
+      "filename": "PI-STOF_Preprint.pdf",
+      "sha256": "d7abe27b06e67c07e2cea97ac3219f7fbfa9d092dd242af1b35b5d7c8849b4b7"
+    },
+    "status": "included_sample_pipeline_reproduced; full_paper_headline_not_reproduced_on_available_sample",
+    "paper_claims": {
+      "hours": 49680,
+      "years": "2019-2024",
+      "best_configuration": {
+        "w25": 7,
+        "w354": 91,
+        "wtrend": 4381
+      },
+      "optimized_composite_loss": 0.0181,
+      "fixed_trend_baseline_loss": 0.043,
+      "unconstrained_baseline_loss": 0.0484,
+      "headline_relative_loss_reduction_percent": 57.91,
+      "headline_spectral_leakage_percent": {
+        "baseline": 1.72,
+        "optimized": 0.36
+      }
+    },
+    "included_sample": {
+      "filename": "raw_sample.csv",
+      "sha256": "2a8cb3526cb0c9174d25dfceca704124b71de84ecc69cc75053eb727a3821900",
+      "hours": 8784,
+      "start": "2020-01-01 00:00:00",
+      "end": "2020-12-31 23:00:00",
+      "observed_count": 4040,
+      "missing_count": 4744,
+      "missing_fraction": 0.540073,
+      "longest_consecutive_missing_run_hours": 8
+    },
+    "sample_pipeline_rerun": {
+      "preprocessed_output_retained": false,
+      "preprocessed_output_filename": "clean_sample.csv",
+      "preprocessed_output_policy": "The row-level scratch output is removed after the reproduction; only aggregate tables and metrics are retained.",
+      "grid_search": {
+        "rows": 20,
+        "best_w25": 7,
+        "best_w354": 91,
+        "minimum_composite_loss": 0.033886,
+        "best_row": {
+          "Micro-filter (w_25)": "7",
+          "Macro-filter (w_354)": "91",
+          "Leakage (L_Leakage)": "0.006171",
+          "Orthogonality (L_Ortho)": "0.018937",
+          "Baseflow (L_Baseflow)": "0.008778",
+          "Total Physical Loss (L_PI)": "0.033886"
+        }
+      },
+      "ablation_table": {
+        "rows": 3,
+        "default_loss": 0.081246,
+        "fixed_trend_baseline_loss": 0.078603,
+        "optimized_loss": 0.033886,
+        "optimized_leakage": 0.006171,
+        "optimized_orthogonality": 0.018937,
+        "optimized_baseflow": 0.008778,
+        "relative_reduction_vs_fixed_trend_percent": 56.8897,
+        "relative_reduction_vs_default_percent": 58.2921,
+        "matches_paper_headline_loss": false,
+        "matches_paper_headline_leakage": false
+      },
+      "reproduction_boundary": "The included 2020 sample permits a code-path rerun only. It is 8,784 hours rather than the paper's 49,680-hour series and is not an independent validation set.",
+      "interpretation": "The checked-in Table 2 and Table 3 are reproduced on the included sample, but those sample values differ from the PDF headline loss (0.0181) and leakage (0.0036). The full-period result cannot be checked without the claimed multi-year source series."
+    },
+    "current_selected_public_source": {
+      "filename": "BaoDinh.csv",
+      "window_hours": 1464,
+      "required_columns_for_paper_target_present": false,
+      "reason": "The selected public station data does not include the paper's original target column or multi-year window; the six-month 4,381-hour trend prior is longer than the entire approved window."
+    },
+    "validity_findings": [
+      "The grid-search objective is evaluated on the same full sequence used to select the parameters; the current artifact does not supply an untouched chronological holdout for the decomposition losses.",
+      "The paper's claim that a deterministic rerun makes significance tests mathematically inapplicable does not establish robustness to period selection, data windows, station choice, or sampling uncertainty.",
+      "Lower spectral penalties and lower linear component correlation show alignment with the chosen objective, not that the decomposition improves downstream forecasts. The paper itself reserves downstream forecasting validation for future work.",
+      "The included sample has a large missing fraction and preprocessing fills values before decomposition; the paper's outputs therefore depend materially on the interpolation rule and should not be treated as direct independent physical observations."
+    ]
+  },
+  "selected_public_window": {
+    "filename": "BaoDinh.csv",
+    "sha256": "cc9e1caabe4faec9b524af122618b8890fb1d7db35377475daed2a30af04af48",
+    "window_start": "2024-06-01 00:00:00",
+    "window_end": "2024-07-31 23:00:00",
+    "hourly_rows": 1464,
+    "six_public_series": {
+      "Sbaodinh": {
+        "row_count": 1464,
+        "numeric_count": 1464,
+        "missing_count": 0,
+        "zero_count": 33,
+        "negative_count": 106
+      },
+      "Zbaodinh": {
+        "row_count": 1464,
+        "numeric_count": 1464,
+        "missing_count": 0,
+        "zero_count": 1,
+        "negative_count": 272
+      },
+      "Sgocat": {
+        "row_count": 1464,
+        "numeric_count": 1464,
+        "missing_count": 0,
+        "zero_count": 90,
+        "negative_count": 337
+      },
+      "Zgocat": {
+        "row_count": 1464,
+        "numeric_count": 1464,
+        "missing_count": 0,
+        "zero_count": 2,
+        "negative_count": 257
+      },
+      "Svamkenh": {
+        "row_count": 1464,
+        "numeric_count": 1464,
+        "missing_count": 0,
+        "zero_count": 0,
+        "negative_count": 20
+      },
+      "Zvamkenh": {
+        "row_count": 1464,
+        "numeric_count": 1464,
+        "missing_count": 0,
+        "zero_count": 0,
+        "negative_count": 279
+      }
+    },
+    "note": "Missing, zero, and negative values are counted separately; salinity conversion is applied only in forecasting scripts."
+  },
+  "database_accessed": false,
+  "forecast_api_enabled": false
+}

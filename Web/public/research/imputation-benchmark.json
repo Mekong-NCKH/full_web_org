@@ -1,0 +1,901 @@
+{
+  "schemaVersion": 1,
+  "classification": "experimental_aggregate_evidence",
+  "source": {
+    "filename": "BaoDinh.csv",
+    "sha256": "cc9e1caabe4faec9b524af122618b8890fb1d7db35377475daed2a30af04af48",
+    "from": "2024-06-01T00:00:00+07:00",
+    "to": "2024-07-31T23:59:59+07:00",
+    "timezone": "UTC+07:00",
+    "stations": [
+      "baodinh",
+      "gocat",
+      "vamkenh"
+    ],
+    "seriesCount": 6,
+    "observationCountPerSeries": 1464,
+    "salinityUnit": "mg/L; source g/L multiplied by 1000",
+    "waterLevelUnit": "m"
+  },
+  "protocol": {
+    "forecastHorizonHours": 24,
+    "forecastHoldoutStart": "2024-07-13T16:00:00+07:00",
+    "forecastOriginCount": 18,
+    "forecastScoredPointsPerSeries": 432,
+    "lookbackHours": 96,
+    "holdoutStart": "2024-07-13T16:00:00+07:00",
+    "holdoutHours": 440,
+    "maskRate": 0.25,
+    "masking": "MCAR point masks, deterministic, shared between models",
+    "maskedPointsPerSeries": 110,
+    "seed": 20261111,
+    "metric": "Macro average of per-series MAE and RMSE divided by standard deviation from the training segment."
+  },
+  "qualityFlags": {
+    "sourceHasNoMissingValuesInSelectedWindow": true,
+    "negativeSalinityObservationsByStation": {
+      "baodinh": 106,
+      "gocat": 337,
+      "vamkenh": 20
+    },
+    "negativeValuesPreserved": true
+  },
+  "models": [
+    {
+      "name": "TimesNet",
+      "normalizedMae": 0.45642068123820345,
+      "normalizedRmse": 0.7301031062748592,
+      "description": "Mô hình hóa biến thiên trong ngày và giữa các chu kỳ bằng biểu diễn 2D.",
+      "bestEpoch": 26,
+      "rank": 1
+    },
+    {
+      "name": "PatchTST",
+      "normalizedMae": 0.6753345705446673,
+      "normalizedRmse": 1.004115943132844,
+      "description": "Chia chuỗi thành các đoạn thời gian nhỏ để giữ cấu trúc cục bộ và học quan hệ dài hạn.",
+      "bestEpoch": 39,
+      "rank": 2
+    },
+    {
+      "name": "DLinear",
+      "normalizedMae": 0.7086553530983905,
+      "normalizedRmse": 1.0476412917067683,
+      "description": "Tách thành phần xu thế và phần dao động rồi dùng các phép chiếu tuyến tính.",
+      "bestEpoch": 39,
+      "rank": 3
+    },
+    {
+      "name": "iTransformer",
+      "normalizedMae": 0.7731739564154041,
+      "normalizedRmse": 1.1345281664738245,
+      "description": "Xem từng biến đo như một token để học quan hệ giữa các kênh.",
+      "bestEpoch": 40,
+      "rank": 4
+    }
+  ],
+  "baselines": [
+    {
+      "name": "train_mean",
+      "label": "Trung bình tập huấn luyện",
+      "normalizedMae": 0.7920997493820748,
+      "normalizedRmse": 1.1422107401110255
+    },
+    {
+      "name": "linear_interpolation",
+      "label": "Nội suy tuyến tính",
+      "normalizedMae": 0.9105770707549743,
+      "normalizedRmse": 1.2465432992737973
+    }
+  ],
+  "forecastModels": [
+    {
+      "name": "PatchTST",
+      "normalizedMae": 0.6550248414721889,
+      "normalizedRmse": 0.8977093843687864,
+      "bestEpoch": 40,
+      "rank": 1
+    },
+    {
+      "name": "DLinear",
+      "normalizedMae": 0.7005808225919937,
+      "normalizedRmse": 0.9575039977949283,
+      "bestEpoch": 40,
+      "rank": 2
+    },
+    {
+      "name": "iTransformer",
+      "normalizedMae": 0.7182397742656056,
+      "normalizedRmse": 0.9676772346731227,
+      "bestEpoch": 40,
+      "rank": 3
+    },
+    {
+      "name": "TimesNet",
+      "normalizedMae": 0.7216100554006605,
+      "normalizedRmse": 0.9627408345330276,
+      "bestEpoch": 40,
+      "rank": 4
+    }
+  ],
+  "forecastBaselines": [
+    {
+      "name": "persistence",
+      "label": "Persistence",
+      "normalizedMae": 1.044674698890381,
+      "normalizedRmse": 1.4817767581221386
+    },
+    {
+      "name": "daily_seasonal_naive_24h",
+      "label": "Daily seasonal naive 24h",
+      "normalizedMae": 0.8513060854748445,
+      "normalizedRmse": 1.269927943118809
+    },
+    {
+      "name": "dlinear_univariate",
+      "label": "DLinear đơn biến (Stage 6)",
+      "normalizedMae": 0.6676118651352149,
+      "normalizedRmse": 0.9098111061121189
+    }
+  ],
+  "combinedRanking": {
+    "rule": "Average rank of the four TSLib models over forecast and imputation; ties are resolved by lower equal-weight mean macro nMAE.",
+    "models": [
+      {
+        "name": "PatchTST",
+        "forecastRank": 1,
+        "imputationRank": 2,
+        "meanTaskRank": 1.5,
+        "meanNormalizedMae": 0.6651797060084281,
+        "combinedRank": 1
+      },
+      {
+        "name": "TimesNet",
+        "forecastRank": 4,
+        "imputationRank": 1,
+        "meanTaskRank": 2.5,
+        "meanNormalizedMae": 0.5890153683194319,
+        "combinedRank": 2
+      },
+      {
+        "name": "DLinear",
+        "forecastRank": 2,
+        "imputationRank": 3,
+        "meanTaskRank": 2.5,
+        "meanNormalizedMae": 0.7046180878451921,
+        "combinedRank": 3
+      },
+      {
+        "name": "iTransformer",
+        "forecastRank": 3,
+        "imputationRank": 4,
+        "meanTaskRank": 3.5,
+        "meanNormalizedMae": 0.7457068653405048,
+        "combinedRank": 4
+      }
+    ]
+  },
+  "series": [
+    {
+      "stationId": "baodinh",
+      "stationLabel": "Bao Dinh",
+      "target": "salinity",
+      "targetLabel": "Độ mặn",
+      "unit": "mg/L",
+      "maskedPoints": 110,
+      "models": {
+        "DLinear": {
+          "n": 110,
+          "mae": 58.976722,
+          "rmse": 73.67215,
+          "bias": 13.806683,
+          "normalizedMae": 0.913000204772194,
+          "normalizedRmse": 1.1404955337464804
+        },
+        "PatchTST": {
+          "n": 110,
+          "mae": 56.689868,
+          "rmse": 74.297402,
+          "bias": 16.160844,
+          "normalizedMae": 0.8775981325735371,
+          "normalizedRmse": 1.150174864585421
+        },
+        "iTransformer": {
+          "n": 110,
+          "mae": 64.145715,
+          "rmse": 80.624219,
+          "bias": 20.324581,
+          "normalizedMae": 0.9930197702452638,
+          "normalizedRmse": 1.2481183416161754
+        },
+        "TimesNet": {
+          "n": 110,
+          "mae": 36.535365,
+          "rmse": 52.076631,
+          "bias": 11.522625,
+          "normalizedMae": 0.5655925693263666,
+          "normalizedRmse": 0.806182052078886
+        }
+      },
+      "baselines": {
+        "train_mean": {
+          "n": 110,
+          "mae": 65.152248,
+          "rmse": 76.553341,
+          "bias": 8.223303,
+          "normalizedMae": 1.0086015931059846,
+          "normalizedRmse": 1.1850983513291158
+        },
+        "linear_interpolation": {
+          "n": 110,
+          "mae": 65.454421,
+          "rmse": 84.227605,
+          "bias": -2.967084,
+          "normalizedMae": 1.0132794388987132,
+          "normalizedRmse": 1.3039012343288843
+        }
+      },
+      "forecastModels": {
+        "DLinear": {
+          "n": 432,
+          "mae": 51.694629,
+          "rmse": 65.648216,
+          "bias": 1.670977,
+          "normalizedMae": 0.8002683984813974,
+          "normalizedRmse": 1.016279518738414
+        },
+        "PatchTST": {
+          "n": 432,
+          "mae": 48.369631,
+          "rmse": 63.304205,
+          "bias": 1.581336,
+          "normalizedMae": 0.7487951434085377,
+          "normalizedRmse": 0.9799926168826567
+        },
+        "iTransformer": {
+          "n": 432,
+          "mae": 52.93075,
+          "rmse": 67.631371,
+          "bias": 1.686537,
+          "normalizedMae": 0.8194044014305476,
+          "normalizedRmse": 1.0469801216151726
+        },
+        "TimesNet": {
+          "n": 432,
+          "mae": 52.044899,
+          "rmse": 67.268111,
+          "bias": 3.013872,
+          "normalizedMae": 0.805690818902213,
+          "normalizedRmse": 1.0413566070633542
+        }
+      },
+      "forecastBaselines": {
+        "persistence": {
+          "n": 432,
+          "mae": 70.501642,
+          "rmse": 93.672672,
+          "bias": 14.756402,
+          "normalizedMae": 1.0914138900899903,
+          "normalizedRmse": 1.450117365247234
+        },
+        "daily_seasonal_naive_24h": {
+          "n": 432,
+          "mae": 59.421875,
+          "rmse": 83.052231,
+          "bias": 2.185708,
+          "normalizedMae": 0.9198914792678324,
+          "normalizedRmse": 1.285705636705064
+        },
+        "dlinear_univariate": {
+          "n": 432,
+          "mae": 49.781984,
+          "rmse": 64.524091,
+          "bias": 2.679549,
+          "normalizedMae": 0.7706593388823151,
+          "normalizedRmse": 0.998877290869772
+        }
+      }
+    },
+    {
+      "stationId": "baodinh",
+      "stationLabel": "Bao Dinh",
+      "target": "water_level",
+      "targetLabel": "Mực nước",
+      "unit": "m",
+      "maskedPoints": 110,
+      "models": {
+        "DLinear": {
+          "n": 110,
+          "mae": 0.24817,
+          "rmse": 0.384232,
+          "bias": 0.10015,
+          "normalizedMae": 0.5415398420627647,
+          "normalizedRmse": 0.8384451649895646
+        },
+        "PatchTST": {
+          "n": 110,
+          "mae": 0.23712,
+          "rmse": 0.350445,
+          "bias": 0.089364,
+          "normalizedMae": 0.5174272770678277,
+          "normalizedRmse": 0.7647174515521038
+        },
+        "iTransformer": {
+          "n": 110,
+          "mae": 0.269969,
+          "rmse": 0.425607,
+          "bias": 0.117321,
+          "normalizedMae": 0.5891081501464421,
+          "normalizedRmse": 0.9287309004344084
+        },
+        "TimesNet": {
+          "n": 110,
+          "mae": 0.130773,
+          "rmse": 0.212635,
+          "bias": 0.021933,
+          "normalizedMae": 0.28536402371791086,
+          "normalizedRmse": 0.4639977608776886
+        }
+      },
+      "baselines": {
+        "train_mean": {
+          "n": 110,
+          "mae": 0.286438,
+          "rmse": 0.449529,
+          "bias": 0.070143,
+          "normalizedMae": 0.6250456915855028,
+          "normalizedRmse": 0.9809318759827239
+        },
+        "linear_interpolation": {
+          "n": 110,
+          "mae": 0.353523,
+          "rmse": 0.467319,
+          "bias": -0.012429,
+          "normalizedMae": 0.7714340556294265,
+          "normalizedRmse": 1.0197520145582832
+        }
+      },
+      "forecastModels": {
+        "DLinear": {
+          "n": 432,
+          "mae": 0.244614,
+          "rmse": 0.338411,
+          "bias": 0.021953,
+          "normalizedMae": 0.5337801786128104,
+          "normalizedRmse": 0.738457668099699
+        },
+        "PatchTST": {
+          "n": 432,
+          "mae": 0.224874,
+          "rmse": 0.309464,
+          "bias": 0.00233,
+          "normalizedMae": 0.49070488150873254,
+          "normalizedRmse": 0.6752914763432786
+        },
+        "iTransformer": {
+          "n": 432,
+          "mae": 0.248245,
+          "rmse": 0.335564,
+          "bias": 0.001578,
+          "normalizedMae": 0.5417035020061693,
+          "normalizedRmse": 0.7322451366480621
+        },
+        "TimesNet": {
+          "n": 432,
+          "mae": 0.256652,
+          "rmse": 0.339528,
+          "bias": -0.028866,
+          "normalizedMae": 0.5600486905955301,
+          "normalizedRmse": 0.7408951101901374
+        }
+      },
+      "forecastBaselines": {
+        "persistence": {
+          "n": 432,
+          "mae": 0.372488,
+          "rmse": 0.547446,
+          "bias": 0.066132,
+          "normalizedMae": 0.8128181999849906,
+          "normalizedRmse": 1.194599751693969
+        },
+        "daily_seasonal_naive_24h": {
+          "n": 432,
+          "mae": 0.303347,
+          "rmse": 0.460928,
+          "bias": 0.000778,
+          "normalizedMae": 0.6619433713592033,
+          "normalizedRmse": 1.005806005247637
+        },
+        "dlinear_univariate": {
+          "n": 432,
+          "mae": 0.224099,
+          "rmse": 0.299949,
+          "bias": 0.021807,
+          "normalizedMae": 0.48901372876021887,
+          "normalizedRmse": 0.6545284848566879
+        }
+      }
+    },
+    {
+      "stationId": "gocat",
+      "stationLabel": "Go Cat",
+      "target": "salinity",
+      "targetLabel": "Độ mặn",
+      "unit": "mg/L",
+      "maskedPoints": 110,
+      "models": {
+        "DLinear": {
+          "n": 110,
+          "mae": 284.758275,
+          "rmse": 377.771714,
+          "bias": 64.426721,
+          "normalizedMae": 0.8540862874924624,
+          "normalizedRmse": 1.1330650206036128
+        },
+        "PatchTST": {
+          "n": 110,
+          "mae": 252.047355,
+          "rmse": 341.726645,
+          "bias": 65.343985,
+          "normalizedMae": 0.7559751852838859,
+          "normalizedRmse": 1.024953678924009
+        },
+        "iTransformer": {
+          "n": 110,
+          "mae": 314.203278,
+          "rmse": 414.796283,
+          "bias": 98.067936,
+          "normalizedMae": 0.942401801053831,
+          "normalizedRmse": 1.2441142137595222
+        },
+        "TimesNet": {
+          "n": 110,
+          "mae": 171.085178,
+          "rmse": 239.524602,
+          "bias": 6.920146,
+          "normalizedMae": 0.5131422590722152,
+          "normalizedRmse": 0.7184152175570302
+        }
+      },
+      "baselines": {
+        "train_mean": {
+          "n": 110,
+          "mae": 334.139146,
+          "rmse": 420.951319,
+          "bias": 58.519529,
+          "normalizedMae": 1.0021962055818812,
+          "normalizedRmse": 1.2625752465306417
+        },
+        "linear_interpolation": {
+          "n": 110,
+          "mae": 350.297295,
+          "rmse": 475.141504,
+          "bias": -39.499466,
+          "normalizedMae": 1.050659954325127,
+          "normalizedRmse": 1.4251099223892438
+        }
+      },
+      "forecastModels": {
+        "DLinear": {
+          "n": 432,
+          "mae": 303.874725,
+          "rmse": 407.207136,
+          "bias": 46.499437,
+          "normalizedMae": 0.9114229805544473,
+          "normalizedRmse": 1.2213517975085297
+        },
+        "PatchTST": {
+          "n": 432,
+          "mae": 280.827285,
+          "rmse": 369.289407,
+          "bias": 18.668623,
+          "normalizedMae": 0.8422959201878776,
+          "normalizedRmse": 1.1076237157108881
+        },
+        "iTransformer": {
+          "n": 432,
+          "mae": 310.102727,
+          "rmse": 406.990178,
+          "bias": 24.49807,
+          "normalizedMae": 0.9301028630150207,
+          "normalizedRmse": 1.2207010671557006
+        },
+        "TimesNet": {
+          "n": 432,
+          "mae": 303.456127,
+          "rmse": 394.513482,
+          "bias": -30.253833,
+          "normalizedMae": 0.9101674637067919,
+          "normalizedRmse": 1.1832792399346583
+        }
+      },
+      "forecastBaselines": {
+        "persistence": {
+          "n": 432,
+          "mae": 445.906628,
+          "rmse": 614.154846,
+          "bias": 113.192356,
+          "normalizedMae": 1.337424650703487,
+          "normalizedRmse": 1.8420579081174902
+        },
+        "daily_seasonal_naive_24h": {
+          "n": 432,
+          "mae": 346.937507,
+          "rmse": 498.744243,
+          "bias": 15.793758,
+          "normalizedMae": 1.040582814829596,
+          "normalizedRmse": 1.4959025120941911
+        },
+        "dlinear_univariate": {
+          "n": 432,
+          "mae": 274.987528,
+          "rmse": 375.174777,
+          "bias": 40.540089,
+          "normalizedMae": 0.8247805156715798,
+          "normalizedRmse": 1.1252759290269703
+        }
+      }
+    },
+    {
+      "stationId": "gocat",
+      "stationLabel": "Go Cat",
+      "target": "water_level",
+      "targetLabel": "Mực nước",
+      "unit": "m",
+      "maskedPoints": 110,
+      "models": {
+        "DLinear": {
+          "n": 110,
+          "mae": 0.264588,
+          "rmse": 0.466965,
+          "bias": 0.119528,
+          "normalizedMae": 0.5229925812287197,
+          "normalizedRmse": 0.9230170328717445
+        },
+        "PatchTST": {
+          "n": 110,
+          "mae": 0.269578,
+          "rmse": 0.467533,
+          "bias": 0.121565,
+          "normalizedMae": 0.5328559649813136,
+          "normalizedRmse": 0.924139758717731
+        },
+        "iTransformer": {
+          "n": 110,
+          "mae": 0.299606,
+          "rmse": 0.503608,
+          "bias": 0.143405,
+          "normalizedMae": 0.5922102109378045,
+          "normalizedRmse": 0.9954466863479563
+        },
+        "TimesNet": {
+          "n": 110,
+          "mae": 0.15505,
+          "rmse": 0.294746,
+          "bias": 0.060342,
+          "normalizedMae": 0.30647648313420484,
+          "normalizedRmse": 0.5826037890865808
+        }
+      },
+      "baselines": {
+        "train_mean": {
+          "n": 110,
+          "mae": 0.299842,
+          "rmse": 0.514055,
+          "bias": 0.085749,
+          "normalizedMae": 0.5926766956202919,
+          "normalizedRmse": 1.0160965400680664
+        },
+        "linear_interpolation": {
+          "n": 110,
+          "mae": 0.398551,
+          "rmse": 0.557713,
+          "bias": -0.008861,
+          "normalizedMae": 0.7877878673306706,
+          "normalizedRmse": 1.1023922530682155
+        }
+      },
+      "forecastModels": {
+        "DLinear": {
+          "n": 432,
+          "mae": 0.271411,
+          "rmse": 0.382727,
+          "bias": 0.018908,
+          "normalizedMae": 0.5364791277906332,
+          "normalizedRmse": 0.7565096740438879
+        },
+        "PatchTST": {
+          "n": 432,
+          "mae": 0.250136,
+          "rmse": 0.348235,
+          "bias": 0.001323,
+          "normalizedMae": 0.49442632431639777,
+          "normalizedRmse": 0.6883317517203472
+        },
+        "iTransformer": {
+          "n": 432,
+          "mae": 0.27642,
+          "rmse": 0.380442,
+          "bias": -0.000293,
+          "normalizedMae": 0.5463800675134274,
+          "normalizedRmse": 0.7519930744698043
+        },
+        "TimesNet": {
+          "n": 432,
+          "mae": 0.287393,
+          "rmse": 0.383129,
+          "bias": -0.018763,
+          "normalizedMae": 0.5680696286190813,
+          "normalizedRmse": 0.7573042793081249
+        }
+      },
+      "forecastBaselines": {
+        "persistence": {
+          "n": 432,
+          "mae": 0.422105,
+          "rmse": 0.630243,
+          "bias": 0.063129,
+          "normalizedMae": 0.8343454105989265,
+          "normalizedRmse": 1.2457572277326712
+        },
+        "daily_seasonal_naive_24h": {
+          "n": 432,
+          "mae": 0.330715,
+          "rmse": 0.518284,
+          "bias": -0.00017,
+          "normalizedMae": 0.6537011939356888,
+          "normalizedRmse": 1.0244557083826393
+        },
+        "dlinear_univariate": {
+          "n": 432,
+          "mae": 0.245725,
+          "rmse": 0.334409,
+          "bias": 0.015891,
+          "normalizedMae": 0.4857074093399064,
+          "normalizedRmse": 0.6610028651946231
+        }
+      }
+    },
+    {
+      "stationId": "vamkenh",
+      "stationLabel": "Vam Kenh",
+      "target": "salinity",
+      "targetLabel": "Độ mặn",
+      "unit": "mg/L",
+      "maskedPoints": 110,
+      "models": {
+        "DLinear": {
+          "n": 110,
+          "mae": 2709.999644,
+          "rmse": 3677.221151,
+          "bias": 609.74426,
+          "normalizedMae": 0.84079123087635,
+          "normalizedRmse": 1.140876643507721
+        },
+        "PatchTST": {
+          "n": 110,
+          "mae": 2508.40412,
+          "rmse": 3473.836837,
+          "bias": 327.297533,
+          "normalizedMae": 0.77824518990605,
+          "normalizedRmse": 1.0777756213036744
+        },
+        "iTransformer": {
+          "n": 110,
+          "mae": 2940.365624,
+          "rmse": 3898.120699,
+          "bias": 773.419076,
+          "normalizedMae": 0.9122634527657772,
+          "normalizedRmse": 1.209411856519339
+        },
+        "TimesNet": {
+          "n": 110,
+          "mae": 1862.268466,
+          "rmse": 2630.850539,
+          "bias": -121.196257,
+          "normalizedMae": 0.5777783031141801,
+          "normalizedRmse": 0.816234816795983
+        }
+      },
+      "baselines": {
+        "train_mean": {
+          "n": 110,
+          "mae": 3032.376675,
+          "rmse": 3959.485703,
+          "bias": 875.371135,
+          "normalizedMae": 0.9408103512850439,
+          "normalizedRmse": 1.228450662432146
+        },
+        "linear_interpolation": {
+          "n": 110,
+          "mae": 3569.407656,
+          "rmse": 4598.08944,
+          "bias": -239.835527,
+          "normalizedMae": 1.107426956026459,
+          "normalizedRmse": 1.4265807335054936
+        }
+      },
+      "forecastModels": {
+        "DLinear": {
+          "n": 432,
+          "mae": 2642.644122,
+          "rmse": 3414.411153,
+          "bias": 553.377268,
+          "normalizedMae": 0.8198938361574676,
+          "normalizedRmse": 1.0593384993259458
+        },
+        "PatchTST": {
+          "n": 432,
+          "mae": 2418.903443,
+          "rmse": 3164.186501,
+          "bias": 136.610186,
+          "normalizedMae": 0.7504771477420206,
+          "normalizedRmse": 0.9817050230203356
+        },
+        "iTransformer": {
+          "n": 432,
+          "mae": 2667.06083,
+          "rmse": 3453.340583,
+          "bias": 171.213957,
+          "normalizedMae": 0.8274692445228231,
+          "normalizedRmse": 1.071416553815541
+        },
+        "TimesNet": {
+          "n": 432,
+          "mae": 2701.264574,
+          "rmse": 3444.705376,
+          "bias": -308.34871,
+          "normalizedMae": 0.838081130794473,
+          "normalizedRmse": 1.068737436739464
+        }
+      },
+      "forecastBaselines": {
+        "persistence": {
+          "n": 432,
+          "mae": 3539.238441,
+          "rmse": 4853.037915,
+          "bias": 982.631025,
+          "normalizedMae": 1.0980668029834193,
+          "normalizedRmse": 1.5056798000237839
+        },
+        "daily_seasonal_naive_24h": {
+          "n": 432,
+          "mae": 3272.129449,
+          "rmse": 4617.106477,
+          "bias": 117.264375,
+          "normalizedMae": 1.0151948739560288,
+          "normalizedRmse": 1.4324808663642756
+        },
+        "dlinear_univariate": {
+          "n": 432,
+          "mae": 2597.856015,
+          "rmse": 3389.700346,
+          "bias": 495.04163,
+          "normalizedMae": 0.8059980972054251,
+          "normalizedRmse": 1.0516718452437295
+        }
+      }
+    },
+    {
+      "stationId": "vamkenh",
+      "stationLabel": "Vam Kenh",
+      "target": "water_level",
+      "targetLabel": "Mực nước",
+      "unit": "m",
+      "maskedPoints": 110,
+      "models": {
+        "DLinear": {
+          "n": 110,
+          "mae": 0.345301,
+          "rmse": 0.661349,
+          "bias": 0.139166,
+          "normalizedMae": 0.5795219721578524,
+          "normalizedRmse": 1.1099483545214857
+        },
+        "PatchTST": {
+          "n": 110,
+          "mae": 0.351488,
+          "rmse": 0.645253,
+          "bias": 0.140619,
+          "normalizedMae": 0.5899056734553889,
+          "normalizedRmse": 1.082934283714124
+        },
+        "iTransformer": {
+          "n": 110,
+          "mae": 0.363485,
+          "rmse": 0.703891,
+          "bias": 0.193258,
+          "normalizedMae": 0.6100403533433062,
+          "normalizedRmse": 1.181347000165545
+        },
+        "TimesNet": {
+          "n": 110,
+          "mae": 0.292062,
+          "rmse": 0.591777,
+          "bias": 0.057608,
+          "normalizedMae": 0.49017044906434293,
+          "normalizedRmse": 0.9931850012529863
+        }
+      },
+      "baselines": {
+        "train_mean": {
+          "n": 110,
+          "mae": 0.347533,
+          "rmse": 0.703155,
+          "bias": 0.103918,
+          "normalizedMae": 0.583267959113744,
+          "normalizedRmse": 1.1801117643234589
+        },
+        "linear_interpolation": {
+          "n": 110,
+          "mae": 0.436674,
+          "rmse": 0.715913,
+          "bias": 0.151723,
+          "normalizedMae": 0.732874152319449,
+          "normalizedRmse": 1.2015236377926637
+        }
+      },
+      "forecastModels": {
+        "DLinear": {
+          "n": 432,
+          "mae": 0.35848,
+          "rmse": 0.567885,
+          "bias": 0.029949,
+          "normalizedMae": 0.6016404139552071,
+          "normalizedRmse": 0.9530868290530928
+        },
+        "PatchTST": {
+          "n": 432,
+          "mae": 0.359558,
+          "rmse": 0.568019,
+          "bias": 0.001304,
+          "normalizedMae": 0.6034496316695668,
+          "normalizedRmse": 0.9533117225352119
+        },
+        "iTransformer": {
+          "n": 432,
+          "mae": 0.383945,
+          "rmse": 0.585546,
+          "bias": -0.007849,
+          "normalizedMae": 0.6443785671056459,
+          "normalizedRmse": 0.9827274543344556
+        },
+        "TimesNet": {
+          "n": 432,
+          "mae": 0.385866,
+          "rmse": 0.586824,
+          "bias": -0.035308,
+          "normalizedMae": 0.6476025997858734,
+          "normalizedRmse": 0.9848723339624258
+        }
+      },
+      "forecastBaselines": {
+        "persistence": {
+          "n": 432,
+          "mae": 0.651834,
+          "rmse": 0.984591,
+          "bias": 0.012678,
+          "normalizedMae": 1.0939792389814729,
+          "normalizedRmse": 1.6524484959176835
+        },
+        "daily_seasonal_naive_24h": {
+          "n": 432,
+          "mae": 0.486515,
+          "rmse": 0.819406,
+          "bias": -0.001718,
+          "normalizedMae": 0.8165227795007184,
+          "normalizedRmse": 1.375216929919048
+        },
+        "dlinear_univariate": {
+          "n": 432,
+          "mae": 0.375087,
+          "rmse": 0.576479,
+          "bias": 0.036532,
+          "normalizedMae": 0.6295121009518432,
+          "normalizedRmse": 0.9675102214809299
+        }
+      }
+    }
+  ],
+  "useBoundary": "Research benchmark only. It contains aggregate forecasting and imputation errors, not replacement observations or deployed forecast values."
+}
