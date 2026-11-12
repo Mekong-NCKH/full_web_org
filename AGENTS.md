@@ -29,7 +29,7 @@ These rules apply to the Mekong salinity monitoring web application and its back
 ## Pull requests and checks
 
 - Make changes on a feature branch and merge through a pull request; do not push directly to `main`.
-- Require the `frontend` and `backend` CI checks, one approving review, dismissal of stale approvals, resolved conversations, and an up-to-date branch before merge.
+- Require the `frontend` and `backend` CI checks, dismissal of stale approvals, resolved conversations, and an up-to-date branch before merge. An approving review is optional while the project has a single maintainer.
 - Run frontend typecheck, lint, and build. Run backend lint, unit tests, E2E tests against disposable PostgreSQL, demo CSV dry-run, and build before merging.
 - Do not use production deployment as a required PR check. Production deployment runs from `main` only after both CI jobs pass and `VERCEL_DEPLOY_ENABLED=true` is configured.
 - Keep PRs focused, explain data/schema/API changes, and include test evidence. Update `DEPLOYMENT.md` and the API contract when deployment or public behavior changes.
