@@ -22,7 +22,7 @@
     "model_source_sha256": "ca5dd503827fb4cc49ca4cf76ba5fba26ffe22a4e765c2c494590741359f33d5",
     "decomposition_source_sha256": "f69c563c6f7a59ed77769fa26380b583fe63e17a8deb5ee6573a923cccc7d8e7",
     "runner": "stage6-dlinear-experiment.py",
-    "runner_sha256": "292f348dca5f208c372c077d4d80fb9409192e48032ff351a3ba9154a39dd662"
+    "runner_sha256": "551c7ef1354e20db2f05561ae0eeb951a4914068b8dabaddc4e3b562eacac489"
   },
   "protocol": {
     "lookback_hours": 96,
