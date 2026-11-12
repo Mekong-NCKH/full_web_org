@@ -1,0 +1,14 @@
+task,model,normalized_mae,normalized_rmse
+forecast_24h,Persistence,1.044675,1.481777
+forecast_24h,Daily seasonal naive,0.851306,1.269928
+forecast_24h,DLinear univariate,0.667612,0.909811
+forecast_24h,DLinear,0.700581,0.957504
+forecast_24h,PatchTST,0.655025,0.897709
+forecast_24h,iTransformer,0.71824,0.967677
+forecast_24h,TimesNet,0.72161,0.962741
+point_imputation_25pct,Training mean,0.7921,1.142211
+point_imputation_25pct,Linear interpolation,0.910577,1.246543
+point_imputation_25pct,DLinear,0.708655,1.047641
+point_imputation_25pct,PatchTST,0.675335,1.004116
+point_imputation_25pct,iTransformer,0.773174,1.134528
+point_imputation_25pct,TimesNet,0.456421,0.730103

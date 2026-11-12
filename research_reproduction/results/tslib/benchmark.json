@@ -1,0 +1,3005 @@
+{
+  "schema_version": 1,
+  "stage": "tslib-current-data-reproduction",
+  "classification": "offline_adapted_research_experiment",
+  "source": {
+    "filename": "BaoDinh.csv",
+    "sha256": "cc9e1caabe4faec9b524af122618b8890fb1d7db35377475daed2a30af04af48",
+    "stations": [
+      "baodinh",
+      "gocat",
+      "vamkenh"
+    ],
+    "series": [
+      "baodinh/salinity",
+      "baodinh/water_level",
+      "gocat/salinity",
+      "gocat/water_level",
+      "vamkenh/salinity",
+      "vamkenh/water_level"
+    ],
+    "window_local": {
+      "from": "2024-06-01T00:00:00+07:00",
+      "to": "2024-07-31T23:59:59+07:00",
+      "timezone": "UTC+07:00"
+    },
+    "salinity_unit": "mg/L (source g/L multiplied by 1000)",
+    "water_level_unit": "m"
+  },
+  "library": {
+    "name": "Time-Series-Library",
+    "repository_commit": "4e938a1767106324dd753b2a44832bf870a0252e",
+    "model_source_sha256": {
+      "DLinear": "ca5dd503827fb4cc49ca4cf76ba5fba26ffe22a4e765c2c494590741359f33d5",
+      "PatchTST": "e677cd698a9a14f036fbbecc3395146a6407a04ab790d52d433f44e3402e0616",
+      "iTransformer": "6de6b88dc0bfcaa36599c12626d611205acca7aa4d572f8da5a769ef7afee232",
+      "TimesNet": "83a09e624cb76a3f36a5ca064e1f0a3c91fad5466df2985d802d949a260e98fe"
+    }
+  },
+  "protocol": {
+    "tasks": [
+      "24-hour multivariate forecasting",
+      "random point imputation"
+    ],
+    "lookback_hours": 96,
+    "forecast_horizon_hours": 24,
+    "outer_initial_history_fraction": 0.7,
+    "inner_training_fraction_of_initial_history": 0.8,
+    "inner_training_end_at": "2024-07-05T02:00:00+07:00",
+    "validation_end_at": "2024-07-13T15:00:00+07:00",
+    "holdout_start_at": "2024-07-13T16:00:00+07:00",
+    "forecast_origins": "non-overlapping 24-hour origins; new observations enter context after each completed block",
+    "normalization": "per-channel mean and standard deviation fitted only on inner training history",
+    "missing_source_values": "none in the selected public window; no source filling or interpolation",
+    "imputation_mask_rate": 0.25,
+    "imputation_masks": "deterministic MCAR point masks, shared between models; scored only at masked holdout values",
+    "optimizer": "Adam",
+    "learning_rate": 0.0001,
+    "batch_size": 32,
+    "maximum_epochs": 40,
+    "early_stopping_patience": 7,
+    "forecast_loss": "MSE on standardized targets",
+    "imputation_loss": "MAE on masked standardized targets",
+    "seed": 20261111,
+    "device": "cpu"
+  },
+  "forecast_models": {
+    "DLinear": {
+      "training": {
+        "best_epoch": 40,
+        "stopped_epoch": 40,
+        "best_validation_mse_standardized": 0.86415678,
+        "history": [
+          {
+            "epoch": 1,
+            "train_mse_standardized": 1.00980796,
+            "validation_mse_standardized": 1.2544924
+          },
+          {
+            "epoch": 2,
+            "train_mse_standardized": 0.97793171,
+            "validation_mse_standardized": 1.21452987
+          },
+          {
+            "epoch": 3,
+            "train_mse_standardized": 0.95174585,
+            "validation_mse_standardized": 1.1805985
+          },
+          {
+            "epoch": 4,
+            "train_mse_standardized": 0.92964435,
+            "validation_mse_standardized": 1.15171027
+          },
+          {
+            "epoch": 5,
+            "train_mse_standardized": 0.91119199,
+            "validation_mse_standardized": 1.12694883
+          },
+          {
+            "epoch": 6,
+            "train_mse_standardized": 0.89522074,
+            "validation_mse_standardized": 1.10564208
+          },
+          {
+            "epoch": 7,
+            "train_mse_standardized": 0.88185067,
+            "validation_mse_standardized": 1.08709109
+          },
+          {
+            "epoch": 8,
+            "train_mse_standardized": 0.87022044,
+            "validation_mse_standardized": 1.07059383
+          },
+          {
+            "epoch": 9,
+            "train_mse_standardized": 0.85955755,
+            "validation_mse_standardized": 1.05610013
+          },
+          {
+            "epoch": 10,
+            "train_mse_standardized": 0.85049495,
+            "validation_mse_standardized": 1.04291832
+          },
+          {
+            "epoch": 11,
+            "train_mse_standardized": 0.84190574,
+            "validation_mse_standardized": 1.03106892
+          },
+          {
+            "epoch": 12,
+            "train_mse_standardized": 0.83497124,
+            "validation_mse_standardized": 1.02017665
+          },
+          {
+            "epoch": 13,
+            "train_mse_standardized": 0.8279166,
+            "validation_mse_standardized": 1.01019299
+          },
+          {
+            "epoch": 14,
+            "train_mse_standardized": 0.82140688,
+            "validation_mse_standardized": 1.00081217
+          },
+          {
+            "epoch": 15,
+            "train_mse_standardized": 0.81571491,
+            "validation_mse_standardized": 0.99224073
+          },
+          {
+            "epoch": 16,
+            "train_mse_standardized": 0.80986547,
+            "validation_mse_standardized": 0.98416054
+          },
+          {
+            "epoch": 17,
+            "train_mse_standardized": 0.8046651,
+            "validation_mse_standardized": 0.97650212
+          },
+          {
+            "epoch": 18,
+            "train_mse_standardized": 0.79993387,
+            "validation_mse_standardized": 0.96921843
+          },
+          {
+            "epoch": 19,
+            "train_mse_standardized": 0.79501084,
+            "validation_mse_standardized": 0.96228468
+          },
+          {
+            "epoch": 20,
+            "train_mse_standardized": 0.79026204,
+            "validation_mse_standardized": 0.95563877
+          },
+          {
+            "epoch": 21,
+            "train_mse_standardized": 0.78609316,
+            "validation_mse_standardized": 0.94950736
+          },
+          {
+            "epoch": 22,
+            "train_mse_standardized": 0.78183715,
+            "validation_mse_standardized": 0.94363964
+          },
+          {
+            "epoch": 23,
+            "train_mse_standardized": 0.77833375,
+            "validation_mse_standardized": 0.9376995
+          },
+          {
+            "epoch": 24,
+            "train_mse_standardized": 0.77451271,
+            "validation_mse_standardized": 0.93222302
+          },
+          {
+            "epoch": 25,
+            "train_mse_standardized": 0.77070394,
+            "validation_mse_standardized": 0.92687178
+          },
+          {
+            "epoch": 26,
+            "train_mse_standardized": 0.76735268,
+            "validation_mse_standardized": 0.92177474
+          },
+          {
+            "epoch": 27,
+            "train_mse_standardized": 0.76415165,
+            "validation_mse_standardized": 0.91681123
+          },
+          {
+            "epoch": 28,
+            "train_mse_standardized": 0.76082374,
+            "validation_mse_standardized": 0.9119767
+          },
+          {
+            "epoch": 29,
+            "train_mse_standardized": 0.75768455,
+            "validation_mse_standardized": 0.90729642
+          },
+          {
+            "epoch": 30,
+            "train_mse_standardized": 0.75499369,
+            "validation_mse_standardized": 0.90281987
+          },
+          {
+            "epoch": 31,
+            "train_mse_standardized": 0.75178189,
+            "validation_mse_standardized": 0.89836907
+          },
+          {
+            "epoch": 32,
+            "train_mse_standardized": 0.74891111,
+            "validation_mse_standardized": 0.89415962
+          },
+          {
+            "epoch": 33,
+            "train_mse_standardized": 0.74611088,
+            "validation_mse_standardized": 0.89012581
+          },
+          {
+            "epoch": 34,
+            "train_mse_standardized": 0.74374726,
+            "validation_mse_standardized": 0.88607436
+          },
+          {
+            "epoch": 35,
+            "train_mse_standardized": 0.74111462,
+            "validation_mse_standardized": 0.88211501
+          },
+          {
+            "epoch": 36,
+            "train_mse_standardized": 0.73846302,
+            "validation_mse_standardized": 0.87814784
+          },
+          {
+            "epoch": 37,
+            "train_mse_standardized": 0.73626657,
+            "validation_mse_standardized": 0.87441665
+          },
+          {
+            "epoch": 38,
+            "train_mse_standardized": 0.73432536,
+            "validation_mse_standardized": 0.87113774
+          },
+          {
+            "epoch": 39,
+            "train_mse_standardized": 0.73196737,
+            "validation_mse_standardized": 0.86749536
+          },
+          {
+            "epoch": 40,
+            "train_mse_standardized": 0.72960401,
+            "validation_mse_standardized": 0.86415678
+          }
+        ]
+      },
+      "origin_count": 18,
+      "scored_points_per_series": 432,
+      "macro_average_normalized_mae": 0.700581,
+      "macro_average_normalized_rmse": 0.957504,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 51.694629,
+              "rmse": 65.648216,
+              "bias": 1.670977
+            },
+            "normalized_mae": 0.800268,
+            "normalized_rmse": 1.01628,
+            "comparison_to_persistence": {
+              "mae_change_percent": -26.676,
+              "rmse_change_percent": -29.9174
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -13.004,
+              "rmse_change_percent": -20.9555
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 3.842,
+              "rmse_change_percent": 1.7422
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.244614,
+              "rmse": 0.338411,
+              "bias": 0.021953
+            },
+            "normalized_mae": 0.53378,
+            "normalized_rmse": 0.738458,
+            "comparison_to_persistence": {
+              "mae_change_percent": -34.3297,
+              "rmse_change_percent": -38.1837
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -19.3617,
+              "rmse_change_percent": -26.5805
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 9.1544,
+              "rmse_change_percent": 12.8228
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 303.874725,
+              "rmse": 407.207136,
+              "bias": 46.499437
+            },
+            "normalized_mae": 0.911423,
+            "normalized_rmse": 1.221352,
+            "comparison_to_persistence": {
+              "mae_change_percent": -31.8524,
+              "rmse_change_percent": -33.6963
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -12.4123,
+              "rmse_change_percent": -18.3535
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 10.5049,
+              "rmse_change_percent": 8.538
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.271411,
+              "rmse": 0.382727,
+              "bias": 0.018908
+            },
+            "normalized_mae": 0.536479,
+            "normalized_rmse": 0.75651,
+            "comparison_to_persistence": {
+              "mae_change_percent": -35.7006,
+              "rmse_change_percent": -39.2731
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -17.9321,
+              "rmse_change_percent": -26.155
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 10.4531,
+              "rmse_change_percent": 14.4488
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 2642.644122,
+              "rmse": 3414.411153,
+              "bias": 553.377268
+            },
+            "normalized_mae": 0.819894,
+            "normalized_rmse": 1.059338,
+            "comparison_to_persistence": {
+              "mae_change_percent": -25.333,
+              "rmse_change_percent": -29.6438
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -19.2378,
+              "rmse_change_percent": -26.0487
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 1.724,
+              "rmse_change_percent": 0.729
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.35848,
+              "rmse": 0.567885,
+              "bias": 0.029949
+            },
+            "normalized_mae": 0.60164,
+            "normalized_rmse": 0.953087,
+            "comparison_to_persistence": {
+              "mae_change_percent": -45.0044,
+              "rmse_change_percent": -42.3228
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -26.3168,
+              "rmse_change_percent": -30.6955
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": -4.4275,
+              "rmse_change_percent": -1.4908
+            }
+          }
+        }
+      }
+    },
+    "PatchTST": {
+      "training": {
+        "best_epoch": 40,
+        "stopped_epoch": 40,
+        "best_validation_mse_standardized": 0.73121852,
+        "history": [
+          {
+            "epoch": 1,
+            "train_mse_standardized": 1.31761081,
+            "validation_mse_standardized": 1.46207201
+          },
+          {
+            "epoch": 2,
+            "train_mse_standardized": 1.16990923,
+            "validation_mse_standardized": 1.31546056
+          },
+          {
+            "epoch": 3,
+            "train_mse_standardized": 1.07595013,
+            "validation_mse_standardized": 1.20397508
+          },
+          {
+            "epoch": 4,
+            "train_mse_standardized": 1.01429526,
+            "validation_mse_standardized": 1.12161481
+          },
+          {
+            "epoch": 5,
+            "train_mse_standardized": 0.96176068,
+            "validation_mse_standardized": 1.05865836
+          },
+          {
+            "epoch": 6,
+            "train_mse_standardized": 0.92584419,
+            "validation_mse_standardized": 1.008816
+          },
+          {
+            "epoch": 7,
+            "train_mse_standardized": 0.897645,
+            "validation_mse_standardized": 0.96990162
+          },
+          {
+            "epoch": 8,
+            "train_mse_standardized": 0.8745687,
+            "validation_mse_standardized": 0.93816966
+          },
+          {
+            "epoch": 9,
+            "train_mse_standardized": 0.8524829,
+            "validation_mse_standardized": 0.91227162
+          },
+          {
+            "epoch": 10,
+            "train_mse_standardized": 0.83689115,
+            "validation_mse_standardized": 0.89094335
+          },
+          {
+            "epoch": 11,
+            "train_mse_standardized": 0.82245354,
+            "validation_mse_standardized": 0.87316453
+          },
+          {
+            "epoch": 12,
+            "train_mse_standardized": 0.81157176,
+            "validation_mse_standardized": 0.8569423
+          },
+          {
+            "epoch": 13,
+            "train_mse_standardized": 0.798122,
+            "validation_mse_standardized": 0.84387761
+          },
+          {
+            "epoch": 14,
+            "train_mse_standardized": 0.78777344,
+            "validation_mse_standardized": 0.83211941
+          },
+          {
+            "epoch": 15,
+            "train_mse_standardized": 0.78068276,
+            "validation_mse_standardized": 0.82231951
+          },
+          {
+            "epoch": 16,
+            "train_mse_standardized": 0.77146778,
+            "validation_mse_standardized": 0.81260055
+          },
+          {
+            "epoch": 17,
+            "train_mse_standardized": 0.7653649,
+            "validation_mse_standardized": 0.80381614
+          },
+          {
+            "epoch": 18,
+            "train_mse_standardized": 0.75862959,
+            "validation_mse_standardized": 0.79663122
+          },
+          {
+            "epoch": 19,
+            "train_mse_standardized": 0.75572377,
+            "validation_mse_standardized": 0.789783
+          },
+          {
+            "epoch": 20,
+            "train_mse_standardized": 0.7459206,
+            "validation_mse_standardized": 0.78424883
+          },
+          {
+            "epoch": 21,
+            "train_mse_standardized": 0.743175,
+            "validation_mse_standardized": 0.77818269
+          },
+          {
+            "epoch": 22,
+            "train_mse_standardized": 0.74089671,
+            "validation_mse_standardized": 0.77389014
+          },
+          {
+            "epoch": 23,
+            "train_mse_standardized": 0.73639234,
+            "validation_mse_standardized": 0.76903766
+          },
+          {
+            "epoch": 24,
+            "train_mse_standardized": 0.73134574,
+            "validation_mse_standardized": 0.7654804
+          },
+          {
+            "epoch": 25,
+            "train_mse_standardized": 0.72813673,
+            "validation_mse_standardized": 0.76160461
+          },
+          {
+            "epoch": 26,
+            "train_mse_standardized": 0.72249255,
+            "validation_mse_standardized": 0.75774193
+          },
+          {
+            "epoch": 27,
+            "train_mse_standardized": 0.72226743,
+            "validation_mse_standardized": 0.75566292
+          },
+          {
+            "epoch": 28,
+            "train_mse_standardized": 0.71923957,
+            "validation_mse_standardized": 0.75214398
+          },
+          {
+            "epoch": 29,
+            "train_mse_standardized": 0.71752137,
+            "validation_mse_standardized": 0.74938971
+          },
+          {
+            "epoch": 30,
+            "train_mse_standardized": 0.71383514,
+            "validation_mse_standardized": 0.74761701
+          },
+          {
+            "epoch": 31,
+            "train_mse_standardized": 0.71257543,
+            "validation_mse_standardized": 0.74508256
+          },
+          {
+            "epoch": 32,
+            "train_mse_standardized": 0.7105831,
+            "validation_mse_standardized": 0.74292266
+          },
+          {
+            "epoch": 33,
+            "train_mse_standardized": 0.71077817,
+            "validation_mse_standardized": 0.74148208
+          },
+          {
+            "epoch": 34,
+            "train_mse_standardized": 0.70637402,
+            "validation_mse_standardized": 0.73948747
+          },
+          {
+            "epoch": 35,
+            "train_mse_standardized": 0.70251297,
+            "validation_mse_standardized": 0.73772568
+          },
+          {
+            "epoch": 36,
+            "train_mse_standardized": 0.70210975,
+            "validation_mse_standardized": 0.7359091
+          },
+          {
+            "epoch": 37,
+            "train_mse_standardized": 0.70187307,
+            "validation_mse_standardized": 0.7353465
+          },
+          {
+            "epoch": 38,
+            "train_mse_standardized": 0.69839838,
+            "validation_mse_standardized": 0.73387837
+          },
+          {
+            "epoch": 39,
+            "train_mse_standardized": 0.69930985,
+            "validation_mse_standardized": 0.73240304
+          },
+          {
+            "epoch": 40,
+            "train_mse_standardized": 0.69803557,
+            "validation_mse_standardized": 0.73121852
+          }
+        ]
+      },
+      "origin_count": 18,
+      "scored_points_per_series": 432,
+      "macro_average_normalized_mae": 0.655025,
+      "macro_average_normalized_rmse": 0.897709,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 48.369631,
+              "rmse": 63.304205,
+              "bias": 1.581336
+            },
+            "normalized_mae": 0.748795,
+            "normalized_rmse": 0.979993,
+            "comparison_to_persistence": {
+              "mae_change_percent": -31.3922,
+              "rmse_change_percent": -32.4198
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -18.5996,
+              "rmse_change_percent": -23.7778
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": -2.8371,
+              "rmse_change_percent": -1.8906
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.224874,
+              "rmse": 0.309464,
+              "bias": 0.00233
+            },
+            "normalized_mae": 0.490705,
+            "normalized_rmse": 0.675291,
+            "comparison_to_persistence": {
+              "mae_change_percent": -39.6292,
+              "rmse_change_percent": -43.4713
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -25.8691,
+              "rmse_change_percent": -32.8607
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 0.3458,
+              "rmse_change_percent": 3.1722
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 280.827285,
+              "rmse": 369.289407,
+              "bias": 18.668623
+            },
+            "normalized_mae": 0.842296,
+            "normalized_rmse": 1.107624,
+            "comparison_to_persistence": {
+              "mae_change_percent": -37.0211,
+              "rmse_change_percent": -39.8703
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -19.0554,
+              "rmse_change_percent": -25.9562
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 2.1236,
+              "rmse_change_percent": -1.5687
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.250136,
+              "rmse": 0.348235,
+              "bias": 0.001323
+            },
+            "normalized_mae": 0.494426,
+            "normalized_rmse": 0.688332,
+            "comparison_to_persistence": {
+              "mae_change_percent": -40.7408,
+              "rmse_change_percent": -44.7459
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -24.3651,
+              "rmse_change_percent": -32.81
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 1.7951,
+              "rmse_change_percent": 4.1345
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 2418.903443,
+              "rmse": 3164.186501,
+              "bias": 136.610186
+            },
+            "normalized_mae": 0.750477,
+            "normalized_rmse": 0.981705,
+            "comparison_to_persistence": {
+              "mae_change_percent": -31.6547,
+              "rmse_change_percent": -34.7999
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -26.0756,
+              "rmse_change_percent": -31.4682
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": -6.8885,
+              "rmse_change_percent": -6.6529
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.359558,
+              "rmse": 0.568019,
+              "bias": 0.001304
+            },
+            "normalized_mae": 0.60345,
+            "normalized_rmse": 0.953312,
+            "comparison_to_persistence": {
+              "mae_change_percent": -44.839,
+              "rmse_change_percent": -42.3091
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -26.0952,
+              "rmse_change_percent": -30.6792
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": -4.1401,
+              "rmse_change_percent": -1.4675
+            }
+          }
+        }
+      }
+    },
+    "iTransformer": {
+      "training": {
+        "best_epoch": 40,
+        "stopped_epoch": 40,
+        "best_validation_mse_standardized": 0.88181478,
+        "history": [
+          {
+            "epoch": 1,
+            "train_mse_standardized": 1.271731,
+            "validation_mse_standardized": 1.5425365
+          },
+          {
+            "epoch": 2,
+            "train_mse_standardized": 1.1944565,
+            "validation_mse_standardized": 1.4459281
+          },
+          {
+            "epoch": 3,
+            "train_mse_standardized": 1.13342094,
+            "validation_mse_standardized": 1.36751628
+          },
+          {
+            "epoch": 4,
+            "train_mse_standardized": 1.08572009,
+            "validation_mse_standardized": 1.30453253
+          },
+          {
+            "epoch": 5,
+            "train_mse_standardized": 1.04723831,
+            "validation_mse_standardized": 1.25265419
+          },
+          {
+            "epoch": 6,
+            "train_mse_standardized": 1.01302235,
+            "validation_mse_standardized": 1.20894611
+          },
+          {
+            "epoch": 7,
+            "train_mse_standardized": 0.98657047,
+            "validation_mse_standardized": 1.17257035
+          },
+          {
+            "epoch": 8,
+            "train_mse_standardized": 0.96341688,
+            "validation_mse_standardized": 1.14176965
+          },
+          {
+            "epoch": 9,
+            "train_mse_standardized": 0.94449277,
+            "validation_mse_standardized": 1.11557388
+          },
+          {
+            "epoch": 10,
+            "train_mse_standardized": 0.9271807,
+            "validation_mse_standardized": 1.09315109
+          },
+          {
+            "epoch": 11,
+            "train_mse_standardized": 0.91290465,
+            "validation_mse_standardized": 1.07380414
+          },
+          {
+            "epoch": 12,
+            "train_mse_standardized": 0.90059014,
+            "validation_mse_standardized": 1.05720592
+          },
+          {
+            "epoch": 13,
+            "train_mse_standardized": 0.88983203,
+            "validation_mse_standardized": 1.04235649
+          },
+          {
+            "epoch": 14,
+            "train_mse_standardized": 0.87962618,
+            "validation_mse_standardized": 1.02944911
+          },
+          {
+            "epoch": 15,
+            "train_mse_standardized": 0.86987605,
+            "validation_mse_standardized": 1.01806021
+          },
+          {
+            "epoch": 16,
+            "train_mse_standardized": 0.86224223,
+            "validation_mse_standardized": 1.00734258
+          },
+          {
+            "epoch": 17,
+            "train_mse_standardized": 0.85639795,
+            "validation_mse_standardized": 0.99803859
+          },
+          {
+            "epoch": 18,
+            "train_mse_standardized": 0.84848373,
+            "validation_mse_standardized": 0.98968089
+          },
+          {
+            "epoch": 19,
+            "train_mse_standardized": 0.84274804,
+            "validation_mse_standardized": 0.98196691
+          },
+          {
+            "epoch": 20,
+            "train_mse_standardized": 0.83652645,
+            "validation_mse_standardized": 0.97441107
+          },
+          {
+            "epoch": 21,
+            "train_mse_standardized": 0.83199484,
+            "validation_mse_standardized": 0.96769089
+          },
+          {
+            "epoch": 22,
+            "train_mse_standardized": 0.82672581,
+            "validation_mse_standardized": 0.96112895
+          },
+          {
+            "epoch": 23,
+            "train_mse_standardized": 0.82192201,
+            "validation_mse_standardized": 0.95508438
+          },
+          {
+            "epoch": 24,
+            "train_mse_standardized": 0.81945465,
+            "validation_mse_standardized": 0.94961762
+          },
+          {
+            "epoch": 25,
+            "train_mse_standardized": 0.8150078,
+            "validation_mse_standardized": 0.94410181
+          },
+          {
+            "epoch": 26,
+            "train_mse_standardized": 0.81020087,
+            "validation_mse_standardized": 0.93878597
+          },
+          {
+            "epoch": 27,
+            "train_mse_standardized": 0.80593477,
+            "validation_mse_standardized": 0.9335584
+          },
+          {
+            "epoch": 28,
+            "train_mse_standardized": 0.80228563,
+            "validation_mse_standardized": 0.928599
+          },
+          {
+            "epoch": 29,
+            "train_mse_standardized": 0.79869649,
+            "validation_mse_standardized": 0.92431635
+          },
+          {
+            "epoch": 30,
+            "train_mse_standardized": 0.796057,
+            "validation_mse_standardized": 0.91990352
+          },
+          {
+            "epoch": 31,
+            "train_mse_standardized": 0.79265581,
+            "validation_mse_standardized": 0.91507119
+          },
+          {
+            "epoch": 32,
+            "train_mse_standardized": 0.7893914,
+            "validation_mse_standardized": 0.91160303
+          },
+          {
+            "epoch": 33,
+            "train_mse_standardized": 0.78655901,
+            "validation_mse_standardized": 0.90729386
+          },
+          {
+            "epoch": 34,
+            "train_mse_standardized": 0.78298044,
+            "validation_mse_standardized": 0.90349191
+          },
+          {
+            "epoch": 35,
+            "train_mse_standardized": 0.78119733,
+            "validation_mse_standardized": 0.89952129
+          },
+          {
+            "epoch": 36,
+            "train_mse_standardized": 0.77744085,
+            "validation_mse_standardized": 0.89577281
+          },
+          {
+            "epoch": 37,
+            "train_mse_standardized": 0.7752816,
+            "validation_mse_standardized": 0.89201444
+          },
+          {
+            "epoch": 38,
+            "train_mse_standardized": 0.77147735,
+            "validation_mse_standardized": 0.88875973
+          },
+          {
+            "epoch": 39,
+            "train_mse_standardized": 0.76945831,
+            "validation_mse_standardized": 0.88509125
+          },
+          {
+            "epoch": 40,
+            "train_mse_standardized": 0.76598274,
+            "validation_mse_standardized": 0.88181478
+          }
+        ]
+      },
+      "origin_count": 18,
+      "scored_points_per_series": 432,
+      "macro_average_normalized_mae": 0.71824,
+      "macro_average_normalized_rmse": 0.967677,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 52.93075,
+              "rmse": 67.631371,
+              "bias": 1.686537
+            },
+            "normalized_mae": 0.819404,
+            "normalized_rmse": 1.04698,
+            "comparison_to_persistence": {
+              "mae_change_percent": -24.9227,
+              "rmse_change_percent": -27.8003
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -10.9238,
+              "rmse_change_percent": -18.5677
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 6.3251,
+              "rmse_change_percent": 4.8157
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.248245,
+              "rmse": 0.335564,
+              "bias": 0.001578
+            },
+            "normalized_mae": 0.541704,
+            "normalized_rmse": 0.732245,
+            "comparison_to_persistence": {
+              "mae_change_percent": -33.3549,
+              "rmse_change_percent": -38.7037
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -18.1647,
+              "rmse_change_percent": -27.1982
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 10.7747,
+              "rmse_change_percent": 11.8737
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 310.102727,
+              "rmse": 406.990178,
+              "bias": 24.49807
+            },
+            "normalized_mae": 0.930103,
+            "normalized_rmse": 1.220701,
+            "comparison_to_persistence": {
+              "mae_change_percent": -30.4557,
+              "rmse_change_percent": -33.7317
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -10.6171,
+              "rmse_change_percent": -18.397
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 12.7697,
+              "rmse_change_percent": 8.4802
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.27642,
+              "rmse": 0.380442,
+              "bias": -0.000293
+            },
+            "normalized_mae": 0.54638,
+            "normalized_rmse": 0.751993,
+            "comparison_to_persistence": {
+              "mae_change_percent": -34.5139,
+              "rmse_change_percent": -39.6357
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -16.4175,
+              "rmse_change_percent": -26.5958
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 12.4916,
+              "rmse_change_percent": 13.7655
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 2667.06083,
+              "rmse": 3453.340583,
+              "bias": 171.213957
+            },
+            "normalized_mae": 0.827469,
+            "normalized_rmse": 1.071417,
+            "comparison_to_persistence": {
+              "mae_change_percent": -24.6431,
+              "rmse_change_percent": -28.8417
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -18.4916,
+              "rmse_change_percent": -25.2055
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 2.6639,
+              "rmse_change_percent": 1.8775
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.383945,
+              "rmse": 0.585546,
+              "bias": -0.007849
+            },
+            "normalized_mae": 0.644379,
+            "normalized_rmse": 0.982727,
+            "comparison_to_persistence": {
+              "mae_change_percent": -41.0977,
+              "rmse_change_percent": -40.529
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -21.0826,
+              "rmse_change_percent": -28.5402
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 2.3616,
+              "rmse_change_percent": 1.5728
+            }
+          }
+        }
+      }
+    },
+    "TimesNet": {
+      "training": {
+        "best_epoch": 40,
+        "stopped_epoch": 40,
+        "best_validation_mse_standardized": 0.88945097,
+        "history": [
+          {
+            "epoch": 1,
+            "train_mse_standardized": 1.28102087,
+            "validation_mse_standardized": 1.54700589
+          },
+          {
+            "epoch": 2,
+            "train_mse_standardized": 1.1764767,
+            "validation_mse_standardized": 1.4375025
+          },
+          {
+            "epoch": 3,
+            "train_mse_standardized": 1.10123404,
+            "validation_mse_standardized": 1.35650194
+          },
+          {
+            "epoch": 4,
+            "train_mse_standardized": 1.03744018,
+            "validation_mse_standardized": 1.28178418
+          },
+          {
+            "epoch": 5,
+            "train_mse_standardized": 0.9717843,
+            "validation_mse_standardized": 1.21115005
+          },
+          {
+            "epoch": 6,
+            "train_mse_standardized": 0.91903899,
+            "validation_mse_standardized": 1.16057527
+          },
+          {
+            "epoch": 7,
+            "train_mse_standardized": 0.88451409,
+            "validation_mse_standardized": 1.13044584
+          },
+          {
+            "epoch": 8,
+            "train_mse_standardized": 0.8627533,
+            "validation_mse_standardized": 1.11195207
+          },
+          {
+            "epoch": 9,
+            "train_mse_standardized": 0.84692604,
+            "validation_mse_standardized": 1.09530544
+          },
+          {
+            "epoch": 10,
+            "train_mse_standardized": 0.83432406,
+            "validation_mse_standardized": 1.08146465
+          },
+          {
+            "epoch": 11,
+            "train_mse_standardized": 0.82461385,
+            "validation_mse_standardized": 1.07163191
+          },
+          {
+            "epoch": 12,
+            "train_mse_standardized": 0.81431776,
+            "validation_mse_standardized": 1.06203866
+          },
+          {
+            "epoch": 13,
+            "train_mse_standardized": 0.80477229,
+            "validation_mse_standardized": 1.05043244
+          },
+          {
+            "epoch": 14,
+            "train_mse_standardized": 0.79653026,
+            "validation_mse_standardized": 1.03926253
+          },
+          {
+            "epoch": 15,
+            "train_mse_standardized": 0.78797789,
+            "validation_mse_standardized": 1.03139937
+          },
+          {
+            "epoch": 16,
+            "train_mse_standardized": 0.78169112,
+            "validation_mse_standardized": 1.02588284
+          },
+          {
+            "epoch": 17,
+            "train_mse_standardized": 0.77321753,
+            "validation_mse_standardized": 1.0154959
+          },
+          {
+            "epoch": 18,
+            "train_mse_standardized": 0.76532103,
+            "validation_mse_standardized": 1.00438643
+          },
+          {
+            "epoch": 19,
+            "train_mse_standardized": 0.75500933,
+            "validation_mse_standardized": 0.99797606
+          },
+          {
+            "epoch": 20,
+            "train_mse_standardized": 0.74849123,
+            "validation_mse_standardized": 0.98924768
+          },
+          {
+            "epoch": 21,
+            "train_mse_standardized": 0.74181772,
+            "validation_mse_standardized": 0.98315984
+          },
+          {
+            "epoch": 22,
+            "train_mse_standardized": 0.7305353,
+            "validation_mse_standardized": 0.97208041
+          },
+          {
+            "epoch": 23,
+            "train_mse_standardized": 0.72200849,
+            "validation_mse_standardized": 0.96507597
+          },
+          {
+            "epoch": 24,
+            "train_mse_standardized": 0.71319836,
+            "validation_mse_standardized": 0.9553203
+          },
+          {
+            "epoch": 25,
+            "train_mse_standardized": 0.70282031,
+            "validation_mse_standardized": 0.95000619
+          },
+          {
+            "epoch": 26,
+            "train_mse_standardized": 0.69414008,
+            "validation_mse_standardized": 0.94235718
+          },
+          {
+            "epoch": 27,
+            "train_mse_standardized": 0.68563301,
+            "validation_mse_standardized": 0.93806171
+          },
+          {
+            "epoch": 28,
+            "train_mse_standardized": 0.67495045,
+            "validation_mse_standardized": 0.93209767
+          },
+          {
+            "epoch": 29,
+            "train_mse_standardized": 0.66571339,
+            "validation_mse_standardized": 0.92690539
+          },
+          {
+            "epoch": 30,
+            "train_mse_standardized": 0.6574028,
+            "validation_mse_standardized": 0.91941166
+          },
+          {
+            "epoch": 31,
+            "train_mse_standardized": 0.64911531,
+            "validation_mse_standardized": 0.91803539
+          },
+          {
+            "epoch": 32,
+            "train_mse_standardized": 0.64164109,
+            "validation_mse_standardized": 0.91269565
+          },
+          {
+            "epoch": 33,
+            "train_mse_standardized": 0.63271711,
+            "validation_mse_standardized": 0.90830624
+          },
+          {
+            "epoch": 34,
+            "train_mse_standardized": 0.62382568,
+            "validation_mse_standardized": 0.90412349
+          },
+          {
+            "epoch": 35,
+            "train_mse_standardized": 0.61577923,
+            "validation_mse_standardized": 0.90549803
+          },
+          {
+            "epoch": 36,
+            "train_mse_standardized": 0.60906547,
+            "validation_mse_standardized": 0.90347713
+          },
+          {
+            "epoch": 37,
+            "train_mse_standardized": 0.59907944,
+            "validation_mse_standardized": 0.89521015
+          },
+          {
+            "epoch": 38,
+            "train_mse_standardized": 0.59192953,
+            "validation_mse_standardized": 0.89942688
+          },
+          {
+            "epoch": 39,
+            "train_mse_standardized": 0.58455048,
+            "validation_mse_standardized": 0.89083618
+          },
+          {
+            "epoch": 40,
+            "train_mse_standardized": 0.57785398,
+            "validation_mse_standardized": 0.88945097
+          }
+        ]
+      },
+      "origin_count": 18,
+      "scored_points_per_series": 432,
+      "macro_average_normalized_mae": 0.72161,
+      "macro_average_normalized_rmse": 0.962741,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 52.044899,
+              "rmse": 67.268111,
+              "bias": 3.013872
+            },
+            "normalized_mae": 0.805691,
+            "normalized_rmse": 1.041357,
+            "comparison_to_persistence": {
+              "mae_change_percent": -26.1792,
+              "rmse_change_percent": -28.1881
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -12.4146,
+              "rmse_change_percent": -19.0051
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 4.5457,
+              "rmse_change_percent": 4.2527
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.256652,
+              "rmse": 0.339528,
+              "bias": -0.028866
+            },
+            "normalized_mae": 0.560049,
+            "normalized_rmse": 0.740895,
+            "comparison_to_persistence": {
+              "mae_change_percent": -31.0979,
+              "rmse_change_percent": -37.9796
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -15.3933,
+              "rmse_change_percent": -26.3382
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 14.5262,
+              "rmse_change_percent": 13.1952
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 303.456127,
+              "rmse": 394.513482,
+              "bias": -30.253833
+            },
+            "normalized_mae": 0.910167,
+            "normalized_rmse": 1.183279,
+            "comparison_to_persistence": {
+              "mae_change_percent": -31.9463,
+              "rmse_change_percent": -35.7632
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -12.5329,
+              "rmse_change_percent": -20.8986
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 10.3527,
+              "rmse_change_percent": 5.1546
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.287393,
+              "rmse": 0.383129,
+              "bias": -0.018763
+            },
+            "normalized_mae": 0.56807,
+            "normalized_rmse": 0.757304,
+            "comparison_to_persistence": {
+              "mae_change_percent": -31.9143,
+              "rmse_change_percent": -39.2093
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -13.0995,
+              "rmse_change_percent": -26.0774
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 16.9572,
+              "rmse_change_percent": 14.569
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 432,
+              "mae": 2701.264574,
+              "rmse": 3444.705376,
+              "bias": -308.34871
+            },
+            "normalized_mae": 0.838081,
+            "normalized_rmse": 1.068737,
+            "comparison_to_persistence": {
+              "mae_change_percent": -23.6767,
+              "rmse_change_percent": -29.0196
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -17.4463,
+              "rmse_change_percent": -25.3926
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 3.9805,
+              "rmse_change_percent": 1.6227
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 432,
+              "mae": 0.385866,
+              "rmse": 0.586824,
+              "bias": -0.035308
+            },
+            "normalized_mae": 0.647603,
+            "normalized_rmse": 0.984872,
+            "comparison_to_persistence": {
+              "mae_change_percent": -40.803,
+              "rmse_change_percent": -40.3992
+            },
+            "comparison_to_daily_seasonal_naive": {
+              "mae_change_percent": -20.6877,
+              "rmse_change_percent": -28.3842
+            },
+            "comparison_to_stage6_univariate_dlinear": {
+              "mae_change_percent": 2.8737,
+              "rmse_change_percent": 1.7945
+            }
+          }
+        }
+      }
+    }
+  },
+  "imputation_models": {
+    "DLinear": {
+      "seed": 20261112,
+      "training": {
+        "best_epoch": 39,
+        "stopped_epoch": 40,
+        "best_validation_masked_mae_standardized": 0.66246162,
+        "history": [
+          {
+            "epoch": 1,
+            "train_masked_mae_standardized": 0.66878891,
+            "validation_masked_mae_standardized": 0.78277014
+          },
+          {
+            "epoch": 2,
+            "train_masked_mae_standardized": 0.66641812,
+            "validation_masked_mae_standardized": 0.77922674
+          },
+          {
+            "epoch": 3,
+            "train_masked_mae_standardized": 0.6596096,
+            "validation_masked_mae_standardized": 0.78010873
+          },
+          {
+            "epoch": 4,
+            "train_masked_mae_standardized": 0.65275888,
+            "validation_masked_mae_standardized": 0.75382978
+          },
+          {
+            "epoch": 5,
+            "train_masked_mae_standardized": 0.64642961,
+            "validation_masked_mae_standardized": 0.77604198
+          },
+          {
+            "epoch": 6,
+            "train_masked_mae_standardized": 0.64473958,
+            "validation_masked_mae_standardized": 0.74251717
+          },
+          {
+            "epoch": 7,
+            "train_masked_mae_standardized": 0.64439155,
+            "validation_masked_mae_standardized": 0.74519216
+          },
+          {
+            "epoch": 8,
+            "train_masked_mae_standardized": 0.63534466,
+            "validation_masked_mae_standardized": 0.73385115
+          },
+          {
+            "epoch": 9,
+            "train_masked_mae_standardized": 0.63832338,
+            "validation_masked_mae_standardized": 0.73127188
+          },
+          {
+            "epoch": 10,
+            "train_masked_mae_standardized": 0.63779333,
+            "validation_masked_mae_standardized": 0.73342305
+          },
+          {
+            "epoch": 11,
+            "train_masked_mae_standardized": 0.63299261,
+            "validation_masked_mae_standardized": 0.71845759
+          },
+          {
+            "epoch": 12,
+            "train_masked_mae_standardized": 0.62819132,
+            "validation_masked_mae_standardized": 0.72312398
+          },
+          {
+            "epoch": 13,
+            "train_masked_mae_standardized": 0.62304216,
+            "validation_masked_mae_standardized": 0.72055173
+          },
+          {
+            "epoch": 14,
+            "train_masked_mae_standardized": 0.62469204,
+            "validation_masked_mae_standardized": 0.72528879
+          },
+          {
+            "epoch": 15,
+            "train_masked_mae_standardized": 0.62250924,
+            "validation_masked_mae_standardized": 0.70088704
+          },
+          {
+            "epoch": 16,
+            "train_masked_mae_standardized": 0.61960142,
+            "validation_masked_mae_standardized": 0.7034687
+          },
+          {
+            "epoch": 17,
+            "train_masked_mae_standardized": 0.61891973,
+            "validation_masked_mae_standardized": 0.710995
+          },
+          {
+            "epoch": 18,
+            "train_masked_mae_standardized": 0.61836002,
+            "validation_masked_mae_standardized": 0.70372461
+          },
+          {
+            "epoch": 19,
+            "train_masked_mae_standardized": 0.61568638,
+            "validation_masked_mae_standardized": 0.70689845
+          },
+          {
+            "epoch": 20,
+            "train_masked_mae_standardized": 0.61363805,
+            "validation_masked_mae_standardized": 0.69855666
+          },
+          {
+            "epoch": 21,
+            "train_masked_mae_standardized": 0.61067707,
+            "validation_masked_mae_standardized": 0.69163296
+          },
+          {
+            "epoch": 22,
+            "train_masked_mae_standardized": 0.61079595,
+            "validation_masked_mae_standardized": 0.70231545
+          },
+          {
+            "epoch": 23,
+            "train_masked_mae_standardized": 0.60796838,
+            "validation_masked_mae_standardized": 0.68924981
+          },
+          {
+            "epoch": 24,
+            "train_masked_mae_standardized": 0.60685537,
+            "validation_masked_mae_standardized": 0.69066988
+          },
+          {
+            "epoch": 25,
+            "train_masked_mae_standardized": 0.60348047,
+            "validation_masked_mae_standardized": 0.69096838
+          },
+          {
+            "epoch": 26,
+            "train_masked_mae_standardized": 0.6026271,
+            "validation_masked_mae_standardized": 0.68506068
+          },
+          {
+            "epoch": 27,
+            "train_masked_mae_standardized": 0.60299081,
+            "validation_masked_mae_standardized": 0.69156282
+          },
+          {
+            "epoch": 28,
+            "train_masked_mae_standardized": 0.59815061,
+            "validation_masked_mae_standardized": 0.68177654
+          },
+          {
+            "epoch": 29,
+            "train_masked_mae_standardized": 0.60042289,
+            "validation_masked_mae_standardized": 0.69023982
+          },
+          {
+            "epoch": 30,
+            "train_masked_mae_standardized": 0.59558263,
+            "validation_masked_mae_standardized": 0.68502121
+          },
+          {
+            "epoch": 31,
+            "train_masked_mae_standardized": 0.59833192,
+            "validation_masked_mae_standardized": 0.68695043
+          },
+          {
+            "epoch": 32,
+            "train_masked_mae_standardized": 0.59303103,
+            "validation_masked_mae_standardized": 0.6626209
+          },
+          {
+            "epoch": 33,
+            "train_masked_mae_standardized": 0.59464679,
+            "validation_masked_mae_standardized": 0.67716147
+          },
+          {
+            "epoch": 34,
+            "train_masked_mae_standardized": 0.59062775,
+            "validation_masked_mae_standardized": 0.67406192
+          },
+          {
+            "epoch": 35,
+            "train_masked_mae_standardized": 0.59168028,
+            "validation_masked_mae_standardized": 0.66552939
+          },
+          {
+            "epoch": 36,
+            "train_masked_mae_standardized": 0.58777981,
+            "validation_masked_mae_standardized": 0.68405047
+          },
+          {
+            "epoch": 37,
+            "train_masked_mae_standardized": 0.59072856,
+            "validation_masked_mae_standardized": 0.67459324
+          },
+          {
+            "epoch": 38,
+            "train_masked_mae_standardized": 0.58783535,
+            "validation_masked_mae_standardized": 0.67276101
+          },
+          {
+            "epoch": 39,
+            "train_masked_mae_standardized": 0.58895119,
+            "validation_masked_mae_standardized": 0.66246162
+          },
+          {
+            "epoch": 40,
+            "train_masked_mae_standardized": 0.58520399,
+            "validation_masked_mae_standardized": 0.66452995
+          }
+        ]
+      },
+      "mask_rate": 0.25,
+      "masking": "MCAR point masks; fixed deterministic holdout masks shared by all models",
+      "macro_average_normalized_mae": 0.708655,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 58.976722,
+              "rmse": 73.67215,
+              "bias": 13.806683
+            },
+            "normalized_mae": 0.913,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.454421,
+              "rmse": 84.227605,
+              "bias": -2.967084
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.152248,
+              "rmse": 76.553341,
+              "bias": 8.223303
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.24817,
+              "rmse": 0.384232,
+              "bias": 0.10015
+            },
+            "normalized_mae": 0.541539,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.353523,
+              "rmse": 0.467319,
+              "bias": -0.012429
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.286438,
+              "rmse": 0.449529,
+              "bias": 0.070143
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 284.758275,
+              "rmse": 377.771714,
+              "bias": 64.426721
+            },
+            "normalized_mae": 0.854086,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 350.297295,
+              "rmse": 475.141504,
+              "bias": -39.499466
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 334.139146,
+              "rmse": 420.951319,
+              "bias": 58.519529
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.264588,
+              "rmse": 0.466965,
+              "bias": 0.119528
+            },
+            "normalized_mae": 0.522992,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.398551,
+              "rmse": 0.557713,
+              "bias": -0.008861
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.299842,
+              "rmse": 0.514055,
+              "bias": 0.085749
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 2709.999644,
+              "rmse": 3677.221151,
+              "bias": 609.74426
+            },
+            "normalized_mae": 0.840791,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3569.407656,
+              "rmse": 4598.08944,
+              "bias": -239.835527
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3032.376675,
+              "rmse": 3959.485703,
+              "bias": 875.371135
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.345301,
+              "rmse": 0.661349,
+              "bias": 0.139166
+            },
+            "normalized_mae": 0.579522,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.436674,
+              "rmse": 0.715913,
+              "bias": 0.151723
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.347533,
+              "rmse": 0.703155,
+              "bias": 0.103918
+            }
+          }
+        }
+      }
+    },
+    "PatchTST": {
+      "seed": 20261212,
+      "training": {
+        "best_epoch": 39,
+        "stopped_epoch": 40,
+        "best_validation_masked_mae_standardized": 0.62762763,
+        "history": [
+          {
+            "epoch": 1,
+            "train_masked_mae_standardized": 0.82016598,
+            "validation_masked_mae_standardized": 0.89226672
+          },
+          {
+            "epoch": 2,
+            "train_masked_mae_standardized": 0.78144671,
+            "validation_masked_mae_standardized": 0.87021829
+          },
+          {
+            "epoch": 3,
+            "train_masked_mae_standardized": 0.75374826,
+            "validation_masked_mae_standardized": 0.83121471
+          },
+          {
+            "epoch": 4,
+            "train_masked_mae_standardized": 0.73578587,
+            "validation_masked_mae_standardized": 0.80591148
+          },
+          {
+            "epoch": 5,
+            "train_masked_mae_standardized": 0.71600809,
+            "validation_masked_mae_standardized": 0.79134601
+          },
+          {
+            "epoch": 6,
+            "train_masked_mae_standardized": 0.70513921,
+            "validation_masked_mae_standardized": 0.77108686
+          },
+          {
+            "epoch": 7,
+            "train_masked_mae_standardized": 0.69533924,
+            "validation_masked_mae_standardized": 0.74633718
+          },
+          {
+            "epoch": 8,
+            "train_masked_mae_standardized": 0.68586949,
+            "validation_masked_mae_standardized": 0.74697632
+          },
+          {
+            "epoch": 9,
+            "train_masked_mae_standardized": 0.67401701,
+            "validation_masked_mae_standardized": 0.73042972
+          },
+          {
+            "epoch": 10,
+            "train_masked_mae_standardized": 0.66914818,
+            "validation_masked_mae_standardized": 0.71602403
+          },
+          {
+            "epoch": 11,
+            "train_masked_mae_standardized": 0.66101855,
+            "validation_masked_mae_standardized": 0.71759981
+          },
+          {
+            "epoch": 12,
+            "train_masked_mae_standardized": 0.65666091,
+            "validation_masked_mae_standardized": 0.70439383
+          },
+          {
+            "epoch": 13,
+            "train_masked_mae_standardized": 0.6522883,
+            "validation_masked_mae_standardized": 0.70380715
+          },
+          {
+            "epoch": 14,
+            "train_masked_mae_standardized": 0.64804799,
+            "validation_masked_mae_standardized": 0.68731718
+          },
+          {
+            "epoch": 15,
+            "train_masked_mae_standardized": 0.64121309,
+            "validation_masked_mae_standardized": 0.69451915
+          },
+          {
+            "epoch": 16,
+            "train_masked_mae_standardized": 0.63648387,
+            "validation_masked_mae_standardized": 0.67960507
+          },
+          {
+            "epoch": 17,
+            "train_masked_mae_standardized": 0.63489076,
+            "validation_masked_mae_standardized": 0.68164395
+          },
+          {
+            "epoch": 18,
+            "train_masked_mae_standardized": 0.62857378,
+            "validation_masked_mae_standardized": 0.68286683
+          },
+          {
+            "epoch": 19,
+            "train_masked_mae_standardized": 0.62828632,
+            "validation_masked_mae_standardized": 0.68082145
+          },
+          {
+            "epoch": 20,
+            "train_masked_mae_standardized": 0.62052229,
+            "validation_masked_mae_standardized": 0.67012984
+          },
+          {
+            "epoch": 21,
+            "train_masked_mae_standardized": 0.62496786,
+            "validation_masked_mae_standardized": 0.6644583
+          },
+          {
+            "epoch": 22,
+            "train_masked_mae_standardized": 0.61802295,
+            "validation_masked_mae_standardized": 0.66398403
+          },
+          {
+            "epoch": 23,
+            "train_masked_mae_standardized": 0.61619343,
+            "validation_masked_mae_standardized": 0.64980727
+          },
+          {
+            "epoch": 24,
+            "train_masked_mae_standardized": 0.61556834,
+            "validation_masked_mae_standardized": 0.65707994
+          },
+          {
+            "epoch": 25,
+            "train_masked_mae_standardized": 0.60993625,
+            "validation_masked_mae_standardized": 0.64207849
+          },
+          {
+            "epoch": 26,
+            "train_masked_mae_standardized": 0.61216474,
+            "validation_masked_mae_standardized": 0.65131013
+          },
+          {
+            "epoch": 27,
+            "train_masked_mae_standardized": 0.60654755,
+            "validation_masked_mae_standardized": 0.66019106
+          },
+          {
+            "epoch": 28,
+            "train_masked_mae_standardized": 0.60715327,
+            "validation_masked_mae_standardized": 0.65087199
+          },
+          {
+            "epoch": 29,
+            "train_masked_mae_standardized": 0.60274922,
+            "validation_masked_mae_standardized": 0.65600143
+          },
+          {
+            "epoch": 30,
+            "train_masked_mae_standardized": 0.60131284,
+            "validation_masked_mae_standardized": 0.6498598
+          },
+          {
+            "epoch": 31,
+            "train_masked_mae_standardized": 0.59781774,
+            "validation_masked_mae_standardized": 0.64346184
+          },
+          {
+            "epoch": 32,
+            "train_masked_mae_standardized": 0.60103418,
+            "validation_masked_mae_standardized": 0.63915998
+          },
+          {
+            "epoch": 33,
+            "train_masked_mae_standardized": 0.59628968,
+            "validation_masked_mae_standardized": 0.63964279
+          },
+          {
+            "epoch": 34,
+            "train_masked_mae_standardized": 0.5958183,
+            "validation_masked_mae_standardized": 0.63990001
+          },
+          {
+            "epoch": 35,
+            "train_masked_mae_standardized": 0.59216696,
+            "validation_masked_mae_standardized": 0.64150546
+          },
+          {
+            "epoch": 36,
+            "train_masked_mae_standardized": 0.58884718,
+            "validation_masked_mae_standardized": 0.63540876
+          },
+          {
+            "epoch": 37,
+            "train_masked_mae_standardized": 0.59221519,
+            "validation_masked_mae_standardized": 0.63673109
+          },
+          {
+            "epoch": 38,
+            "train_masked_mae_standardized": 0.59001096,
+            "validation_masked_mae_standardized": 0.63382779
+          },
+          {
+            "epoch": 39,
+            "train_masked_mae_standardized": 0.58901929,
+            "validation_masked_mae_standardized": 0.62762763
+          },
+          {
+            "epoch": 40,
+            "train_masked_mae_standardized": 0.58794554,
+            "validation_masked_mae_standardized": 0.63259757
+          }
+        ]
+      },
+      "mask_rate": 0.25,
+      "masking": "MCAR point masks; fixed deterministic holdout masks shared by all models",
+      "macro_average_normalized_mae": 0.675335,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 56.689868,
+              "rmse": 74.297402,
+              "bias": 16.160844
+            },
+            "normalized_mae": 0.877598,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.454421,
+              "rmse": 84.227605,
+              "bias": -2.967084
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.152248,
+              "rmse": 76.553341,
+              "bias": 8.223303
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.23712,
+              "rmse": 0.350445,
+              "bias": 0.089364
+            },
+            "normalized_mae": 0.517427,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.353523,
+              "rmse": 0.467319,
+              "bias": -0.012429
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.286438,
+              "rmse": 0.449529,
+              "bias": 0.070143
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 252.047355,
+              "rmse": 341.726645,
+              "bias": 65.343985
+            },
+            "normalized_mae": 0.755975,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 350.297295,
+              "rmse": 475.141504,
+              "bias": -39.499466
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 334.139146,
+              "rmse": 420.951319,
+              "bias": 58.519529
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.269578,
+              "rmse": 0.467533,
+              "bias": 0.121565
+            },
+            "normalized_mae": 0.532856,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.398551,
+              "rmse": 0.557713,
+              "bias": -0.008861
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.299842,
+              "rmse": 0.514055,
+              "bias": 0.085749
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 2508.40412,
+              "rmse": 3473.836837,
+              "bias": 327.297533
+            },
+            "normalized_mae": 0.778245,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3569.407656,
+              "rmse": 4598.08944,
+              "bias": -239.835527
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3032.376675,
+              "rmse": 3959.485703,
+              "bias": 875.371135
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.351488,
+              "rmse": 0.645253,
+              "bias": 0.140619
+            },
+            "normalized_mae": 0.589906,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.436674,
+              "rmse": 0.715913,
+              "bias": 0.151723
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.347533,
+              "rmse": 0.703155,
+              "bias": 0.103918
+            }
+          }
+        }
+      }
+    },
+    "iTransformer": {
+      "seed": 20261312,
+      "training": {
+        "best_epoch": 40,
+        "stopped_epoch": 40,
+        "best_validation_masked_mae_standardized": 0.72500929,
+        "history": [
+          {
+            "epoch": 1,
+            "train_masked_mae_standardized": 0.80607724,
+            "validation_masked_mae_standardized": 0.92207244
+          },
+          {
+            "epoch": 2,
+            "train_masked_mae_standardized": 0.79177417,
+            "validation_masked_mae_standardized": 0.91919287
+          },
+          {
+            "epoch": 3,
+            "train_masked_mae_standardized": 0.78147004,
+            "validation_masked_mae_standardized": 0.89528905
+          },
+          {
+            "epoch": 4,
+            "train_masked_mae_standardized": 0.77082214,
+            "validation_masked_mae_standardized": 0.88691387
+          },
+          {
+            "epoch": 5,
+            "train_masked_mae_standardized": 0.75580987,
+            "validation_masked_mae_standardized": 0.87554191
+          },
+          {
+            "epoch": 6,
+            "train_masked_mae_standardized": 0.74721742,
+            "validation_masked_mae_standardized": 0.86084484
+          },
+          {
+            "epoch": 7,
+            "train_masked_mae_standardized": 0.73751814,
+            "validation_masked_mae_standardized": 0.83854787
+          },
+          {
+            "epoch": 8,
+            "train_masked_mae_standardized": 0.72387704,
+            "validation_masked_mae_standardized": 0.832002
+          },
+          {
+            "epoch": 9,
+            "train_masked_mae_standardized": 0.71437952,
+            "validation_masked_mae_standardized": 0.82051823
+          },
+          {
+            "epoch": 10,
+            "train_masked_mae_standardized": 0.70629685,
+            "validation_masked_mae_standardized": 0.80714811
+          },
+          {
+            "epoch": 11,
+            "train_masked_mae_standardized": 0.69535683,
+            "validation_masked_mae_standardized": 0.80468577
+          },
+          {
+            "epoch": 12,
+            "train_masked_mae_standardized": 0.68348231,
+            "validation_masked_mae_standardized": 0.78537215
+          },
+          {
+            "epoch": 13,
+            "train_masked_mae_standardized": 0.67770153,
+            "validation_masked_mae_standardized": 0.78046092
+          },
+          {
+            "epoch": 14,
+            "train_masked_mae_standardized": 0.66550487,
+            "validation_masked_mae_standardized": 0.77380735
+          },
+          {
+            "epoch": 15,
+            "train_masked_mae_standardized": 0.66120599,
+            "validation_masked_mae_standardized": 0.78537151
+          },
+          {
+            "epoch": 16,
+            "train_masked_mae_standardized": 0.65373112,
+            "validation_masked_mae_standardized": 0.76140276
+          },
+          {
+            "epoch": 17,
+            "train_masked_mae_standardized": 0.6505673,
+            "validation_masked_mae_standardized": 0.77216156
+          },
+          {
+            "epoch": 18,
+            "train_masked_mae_standardized": 0.64725315,
+            "validation_masked_mae_standardized": 0.76246297
+          },
+          {
+            "epoch": 19,
+            "train_masked_mae_standardized": 0.64819917,
+            "validation_masked_mae_standardized": 0.75269468
+          },
+          {
+            "epoch": 20,
+            "train_masked_mae_standardized": 0.64578292,
+            "validation_masked_mae_standardized": 0.7511137
+          },
+          {
+            "epoch": 21,
+            "train_masked_mae_standardized": 0.64066282,
+            "validation_masked_mae_standardized": 0.75222825
+          },
+          {
+            "epoch": 22,
+            "train_masked_mae_standardized": 0.6417987,
+            "validation_masked_mae_standardized": 0.76347175
+          },
+          {
+            "epoch": 23,
+            "train_masked_mae_standardized": 0.63854581,
+            "validation_masked_mae_standardized": 0.75821115
+          },
+          {
+            "epoch": 24,
+            "train_masked_mae_standardized": 0.64560341,
+            "validation_masked_mae_standardized": 0.74915203
+          },
+          {
+            "epoch": 25,
+            "train_masked_mae_standardized": 0.64292062,
+            "validation_masked_mae_standardized": 0.75148697
+          },
+          {
+            "epoch": 26,
+            "train_masked_mae_standardized": 0.63800283,
+            "validation_masked_mae_standardized": 0.754219
+          },
+          {
+            "epoch": 27,
+            "train_masked_mae_standardized": 0.639385,
+            "validation_masked_mae_standardized": 0.74997778
+          },
+          {
+            "epoch": 28,
+            "train_masked_mae_standardized": 0.63373027,
+            "validation_masked_mae_standardized": 0.74767712
+          },
+          {
+            "epoch": 29,
+            "train_masked_mae_standardized": 0.63787997,
+            "validation_masked_mae_standardized": 0.7523021
+          },
+          {
+            "epoch": 30,
+            "train_masked_mae_standardized": 0.63802017,
+            "validation_masked_mae_standardized": 0.7522449
+          },
+          {
+            "epoch": 31,
+            "train_masked_mae_standardized": 0.63591242,
+            "validation_masked_mae_standardized": 0.74033804
+          },
+          {
+            "epoch": 32,
+            "train_masked_mae_standardized": 0.63618287,
+            "validation_masked_mae_standardized": 0.74773839
+          },
+          {
+            "epoch": 33,
+            "train_masked_mae_standardized": 0.63616898,
+            "validation_masked_mae_standardized": 0.74755062
+          },
+          {
+            "epoch": 34,
+            "train_masked_mae_standardized": 0.63092915,
+            "validation_masked_mae_standardized": 0.74439122
+          },
+          {
+            "epoch": 35,
+            "train_masked_mae_standardized": 0.63212285,
+            "validation_masked_mae_standardized": 0.74277543
+          },
+          {
+            "epoch": 36,
+            "train_masked_mae_standardized": 0.62932773,
+            "validation_masked_mae_standardized": 0.74256651
+          },
+          {
+            "epoch": 37,
+            "train_masked_mae_standardized": 0.63036953,
+            "validation_masked_mae_standardized": 0.72643204
+          },
+          {
+            "epoch": 38,
+            "train_masked_mae_standardized": 0.63281332,
+            "validation_masked_mae_standardized": 0.73219317
+          },
+          {
+            "epoch": 39,
+            "train_masked_mae_standardized": 0.6335599,
+            "validation_masked_mae_standardized": 0.73044489
+          },
+          {
+            "epoch": 40,
+            "train_masked_mae_standardized": 0.62855871,
+            "validation_masked_mae_standardized": 0.72500929
+          }
+        ]
+      },
+      "mask_rate": 0.25,
+      "masking": "MCAR point masks; fixed deterministic holdout masks shared by all models",
+      "macro_average_normalized_mae": 0.773174,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 64.145715,
+              "rmse": 80.624219,
+              "bias": 20.324581
+            },
+            "normalized_mae": 0.99302,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.454421,
+              "rmse": 84.227605,
+              "bias": -2.967084
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.152248,
+              "rmse": 76.553341,
+              "bias": 8.223303
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.269969,
+              "rmse": 0.425607,
+              "bias": 0.117321
+            },
+            "normalized_mae": 0.589108,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.353523,
+              "rmse": 0.467319,
+              "bias": -0.012429
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.286438,
+              "rmse": 0.449529,
+              "bias": 0.070143
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 314.203278,
+              "rmse": 414.796283,
+              "bias": 98.067936
+            },
+            "normalized_mae": 0.942402,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 350.297295,
+              "rmse": 475.141504,
+              "bias": -39.499466
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 334.139146,
+              "rmse": 420.951319,
+              "bias": 58.519529
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.299606,
+              "rmse": 0.503608,
+              "bias": 0.143405
+            },
+            "normalized_mae": 0.592211,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.398551,
+              "rmse": 0.557713,
+              "bias": -0.008861
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.299842,
+              "rmse": 0.514055,
+              "bias": 0.085749
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 2940.365624,
+              "rmse": 3898.120699,
+              "bias": 773.419076
+            },
+            "normalized_mae": 0.912263,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3569.407656,
+              "rmse": 4598.08944,
+              "bias": -239.835527
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3032.376675,
+              "rmse": 3959.485703,
+              "bias": 875.371135
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.363485,
+              "rmse": 0.703891,
+              "bias": 0.193258
+            },
+            "normalized_mae": 0.61004,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.436674,
+              "rmse": 0.715913,
+              "bias": 0.151723
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.347533,
+              "rmse": 0.703155,
+              "bias": 0.103918
+            }
+          }
+        }
+      }
+    },
+    "TimesNet": {
+      "seed": 20261412,
+      "training": {
+        "best_epoch": 26,
+        "stopped_epoch": 33,
+        "best_validation_masked_mae_standardized": 0.44746614,
+        "history": [
+          {
+            "epoch": 1,
+            "train_masked_mae_standardized": 0.76895363,
+            "validation_masked_mae_standardized": 0.80617802
+          },
+          {
+            "epoch": 2,
+            "train_masked_mae_standardized": 0.65456642,
+            "validation_masked_mae_standardized": 0.7116899
+          },
+          {
+            "epoch": 3,
+            "train_masked_mae_standardized": 0.58801168,
+            "validation_masked_mae_standardized": 0.6610316
+          },
+          {
+            "epoch": 4,
+            "train_masked_mae_standardized": 0.54415612,
+            "validation_masked_mae_standardized": 0.62531264
+          },
+          {
+            "epoch": 5,
+            "train_masked_mae_standardized": 0.51322758,
+            "validation_masked_mae_standardized": 0.57888563
+          },
+          {
+            "epoch": 6,
+            "train_masked_mae_standardized": 0.48454693,
+            "validation_masked_mae_standardized": 0.54353103
+          },
+          {
+            "epoch": 7,
+            "train_masked_mae_standardized": 0.47029241,
+            "validation_masked_mae_standardized": 0.52979277
+          },
+          {
+            "epoch": 8,
+            "train_masked_mae_standardized": 0.45195235,
+            "validation_masked_mae_standardized": 0.51589678
+          },
+          {
+            "epoch": 9,
+            "train_masked_mae_standardized": 0.44374459,
+            "validation_masked_mae_standardized": 0.50823756
+          },
+          {
+            "epoch": 10,
+            "train_masked_mae_standardized": 0.4331718,
+            "validation_masked_mae_standardized": 0.49440438
+          },
+          {
+            "epoch": 11,
+            "train_masked_mae_standardized": 0.42704722,
+            "validation_masked_mae_standardized": 0.49778978
+          },
+          {
+            "epoch": 12,
+            "train_masked_mae_standardized": 0.41862397,
+            "validation_masked_mae_standardized": 0.49091228
+          },
+          {
+            "epoch": 13,
+            "train_masked_mae_standardized": 0.41257866,
+            "validation_masked_mae_standardized": 0.48625519
+          },
+          {
+            "epoch": 14,
+            "train_masked_mae_standardized": 0.40737282,
+            "validation_masked_mae_standardized": 0.47626974
+          },
+          {
+            "epoch": 15,
+            "train_masked_mae_standardized": 0.40379352,
+            "validation_masked_mae_standardized": 0.48339125
+          },
+          {
+            "epoch": 16,
+            "train_masked_mae_standardized": 0.40186785,
+            "validation_masked_mae_standardized": 0.46965222
+          },
+          {
+            "epoch": 17,
+            "train_masked_mae_standardized": 0.39460218,
+            "validation_masked_mae_standardized": 0.47311427
+          },
+          {
+            "epoch": 18,
+            "train_masked_mae_standardized": 0.39073746,
+            "validation_masked_mae_standardized": 0.46867467
+          },
+          {
+            "epoch": 19,
+            "train_masked_mae_standardized": 0.38945686,
+            "validation_masked_mae_standardized": 0.47202525
+          },
+          {
+            "epoch": 20,
+            "train_masked_mae_standardized": 0.38699139,
+            "validation_masked_mae_standardized": 0.47066686
+          },
+          {
+            "epoch": 21,
+            "train_masked_mae_standardized": 0.38743224,
+            "validation_masked_mae_standardized": 0.46373108
+          },
+          {
+            "epoch": 22,
+            "train_masked_mae_standardized": 0.38111894,
+            "validation_masked_mae_standardized": 0.46201804
+          },
+          {
+            "epoch": 23,
+            "train_masked_mae_standardized": 0.38067381,
+            "validation_masked_mae_standardized": 0.46473583
+          },
+          {
+            "epoch": 24,
+            "train_masked_mae_standardized": 0.37884357,
+            "validation_masked_mae_standardized": 0.46015578
+          },
+          {
+            "epoch": 25,
+            "train_masked_mae_standardized": 0.37751478,
+            "validation_masked_mae_standardized": 0.46162306
+          },
+          {
+            "epoch": 26,
+            "train_masked_mae_standardized": 0.3742156,
+            "validation_masked_mae_standardized": 0.44746614
+          },
+          {
+            "epoch": 27,
+            "train_masked_mae_standardized": 0.37367798,
+            "validation_masked_mae_standardized": 0.45442276
+          },
+          {
+            "epoch": 28,
+            "train_masked_mae_standardized": 0.36975934,
+            "validation_masked_mae_standardized": 0.45658848
+          },
+          {
+            "epoch": 29,
+            "train_masked_mae_standardized": 0.36771795,
+            "validation_masked_mae_standardized": 0.45227513
+          },
+          {
+            "epoch": 30,
+            "train_masked_mae_standardized": 0.36275004,
+            "validation_masked_mae_standardized": 0.45176215
+          },
+          {
+            "epoch": 31,
+            "train_masked_mae_standardized": 0.36755252,
+            "validation_masked_mae_standardized": 0.45477395
+          },
+          {
+            "epoch": 32,
+            "train_masked_mae_standardized": 0.36169984,
+            "validation_masked_mae_standardized": 0.44934808
+          },
+          {
+            "epoch": 33,
+            "train_masked_mae_standardized": 0.36239851,
+            "validation_masked_mae_standardized": 0.4494972
+          }
+        ]
+      },
+      "mask_rate": 0.25,
+      "masking": "MCAR point masks; fixed deterministic holdout masks shared by all models",
+      "macro_average_normalized_mae": 0.456421,
+      "metrics_by_series": {
+        "baodinh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 36.535365,
+              "rmse": 52.076631,
+              "bias": 11.522625
+            },
+            "normalized_mae": 0.565593,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.454421,
+              "rmse": 84.227605,
+              "bias": -2.967084
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 65.152248,
+              "rmse": 76.553341,
+              "bias": 8.223303
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.130773,
+              "rmse": 0.212635,
+              "bias": 0.021933
+            },
+            "normalized_mae": 0.285365,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.353523,
+              "rmse": 0.467319,
+              "bias": -0.012429
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.286438,
+              "rmse": 0.449529,
+              "bias": 0.070143
+            }
+          }
+        },
+        "gocat": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 171.085178,
+              "rmse": 239.524602,
+              "bias": 6.920146
+            },
+            "normalized_mae": 0.513142,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 350.297295,
+              "rmse": 475.141504,
+              "bias": -39.499466
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 334.139146,
+              "rmse": 420.951319,
+              "bias": 58.519529
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.15505,
+              "rmse": 0.294746,
+              "bias": 0.060342
+            },
+            "normalized_mae": 0.306476,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.398551,
+              "rmse": 0.557713,
+              "bias": -0.008861
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.299842,
+              "rmse": 0.514055,
+              "bias": 0.085749
+            }
+          }
+        },
+        "vamkenh": {
+          "salinity": {
+            "unit": "mg/L",
+            "metrics": {
+              "n": 110,
+              "mae": 1862.268466,
+              "rmse": 2630.850539,
+              "bias": -121.196257
+            },
+            "normalized_mae": 0.577778,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3569.407656,
+              "rmse": 4598.08944,
+              "bias": -239.835527
+            },
+            "train_mean": {
+              "unit": "mg/L",
+              "n": 110,
+              "mae": 3032.376675,
+              "rmse": 3959.485703,
+              "bias": 875.371135
+            }
+          },
+          "water_level": {
+            "unit": "m",
+            "metrics": {
+              "n": 110,
+              "mae": 0.292062,
+              "rmse": 0.591777,
+              "bias": 0.057608
+            },
+            "normalized_mae": 0.49017,
+            "masked_points": 110,
+            "linear_interpolation": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.436674,
+              "rmse": 0.715913,
+              "bias": 0.151723
+            },
+            "train_mean": {
+              "unit": "m",
+              "n": 110,
+              "mae": 0.347533,
+              "rmse": 0.703155,
+              "bias": 0.103918
+            }
+          }
+        }
+      }
+    }
+  },
+  "model_artifacts": {
+    "DLinear": {
+      "forecast_artifact": {
+        "filename": "dlinear-forecast.pt",
+        "sha256": "e4c198206e89817244e25b13846b271f8aa983af832fe14a89508327f3ef3b96"
+      },
+      "imputation_artifact": {
+        "filename": "dlinear-imputation.pt",
+        "sha256": "bab162f661e3d5a67a8509b87f197ebc22af98f611134328ea8e5d38c7a3b3a7"
+      }
+    },
+    "PatchTST": {
+      "forecast_artifact": {
+        "filename": "patchtst-forecast.pt",
+        "sha256": "7f9e6f00df5a3b8fc1678d4abd32531a72d827ff3685bcf7740977b8587ee77d"
+      },
+      "imputation_artifact": {
+        "filename": "patchtst-imputation.pt",
+        "sha256": "b5ba41ca6115063f0566d5ab2ff4fc93766ad2ada8bd71132af150774f4cbf8c"
+      }
+    },
+    "iTransformer": {
+      "forecast_artifact": {
+        "filename": "itransformer-forecast.pt",
+        "sha256": "ead36b07f45402b87ddbed485fd363dc0a625013949c1184ff0739766706533a"
+      },
+      "imputation_artifact": {
+        "filename": "itransformer-imputation.pt",
+        "sha256": "5eaf82b8e9cc910819ce32b5156a755e079a3a8f4dd93533d513ebd756717f8f"
+      }
+    },
+    "TimesNet": {
+      "forecast_artifact": {
+        "filename": "timesnet-forecast.pt",
+        "sha256": "8942a6fa4c8629fe65973010f0016ae5cd514af9cd9770d04915b452175c7640"
+      },
+      "imputation_artifact": {
+        "filename": "timesnet-imputation.pt",
+        "sha256": "7cf8d4b0d666c766da4e482c93de275a674f25a58cd63c6064155f442dbd5dde"
+      }
+    }
+  },
+  "decision": {
+    "forecast_api_enabled": false,
+    "database_accessed": false,
+    "forecast_rows_written": false,
+    "eligible_for_public_api": false,
+    "reason": "one short June-July holdout; no independent-season validation or owner-approved quality thresholds"
+  },
+  "runner_sha256": "f825f37d65d719b4b7b98dc2f642b81eca0e14374bd707ebf327824616fdbb54"
+}
