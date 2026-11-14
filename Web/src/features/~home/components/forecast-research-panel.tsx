@@ -198,14 +198,6 @@ export default function ForecastResearchPanel() {
               >
                 Xem kết quả dự báo <span className="ml-2" aria-hidden="true">↓</span>
               </a>
-              <a
-                href={`${import.meta.env.BASE_URL}research/imputation-assessment.md`}
-                download="mekong-forecast-imputation-assessment.md"
-                className="inline-flex items-center rounded-xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Bài báo: dự báo & nội suy{' '}
-                <span className="ml-2" aria-hidden="true">↓</span>
-              </a>
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.07] p-5 backdrop-blur-sm">
