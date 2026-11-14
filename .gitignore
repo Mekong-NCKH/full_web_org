@@ -9,6 +9,7 @@
 **/dist/
 **/coverage/
 **/tsconfig.tsbuildinfo
+**/.playwright-mcp/
 
 # Python bytecode and cache directories
 **/__pycache__/
