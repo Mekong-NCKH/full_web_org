@@ -91,10 +91,12 @@ Các mô hình TSLib chưa đủ điều kiện phục vụ API công khai. Kế
 - `results/tslib/benchmark.json`: protocol, lịch sử train, điểm theo trạm/kênh, so sánh baseline và SHA-256 của checkpoint.
 - `results/tslib/summary.csv`: so sánh macro nMAE/nRMSE.
 - `results/tslib/artifacts/`: tám checkpoint TSLib (bốn mô hình, hai tác vụ). Các checkpoint không được đăng ký hoặc phục vụ qua API.
+- `Web/public/research/forecast-backtest.json`: dự báo theo giờ cho 18 mốc holdout, sáu chuỗi, bốn mô hình; quan trắc đối chiếu được tải qua Monitoring API. Đây là đường dự báo backtest lịch sử, không phải dự báo trực tiếp.
+- `papers/tslib-forecasting-mekong.md`: bài nghiên cứu đầy đủ về protocol dự báo, mô hình, kết quả theo trạm/biến và giới hạn áp dụng.
 - `papers/imputation-assessment-mekong.md`: bản thảo khoa học phân tích protocol, kết quả, top 3 và giới hạn áp dụng.
-- Mục nghiên cứu được nhúng trong `/home#forecast-research`: giao diện tập trung vào so sánh dự báo theo mô hình, trạm và chỉ tiêu; nút tải bản thảo chứa đánh giá cả dự báo lẫn nội suy và lựa chọn top 3 đa tác vụ. Giao diện chỉ hiển thị metric tổng hợp, không ghi đè hoặc điền giá trị trong bản đồ quan trắc.
-- `Web/public/research/imputation-benchmark.json`: artifact metric-only mà mục nghiên cứu ở `/home` đọc; gồm sai số dự báo và nội suy, không chứa hàng quan trắc, giá trị dự đoán hay dữ liệu ngoài ba trạm được duyệt.
-- `scripts/audit_existing_papers.py`, `scripts/reproduce_tslib_benchmark.py`, `scripts/summarize_tslib_benchmark.py`, `scripts/export_imputation_dashboard.py`: mã audit, tái chạy mô hình, tổng hợp điểm và xuất dữ liệu nghiên cứu cho giao diện.
+- Mục nghiên cứu được nhúng trong `/home#forecast-research`: hiển thị so sánh sai số và đường dự báo theo giờ theo trạm, chỉ tiêu, origin, mô hình; overlay quan trắc được tải từ Monitoring API. Dự báo nghiên cứu không được ghi vào hoặc hiển thị thay dữ liệu trên bản đồ.
+- `Web/public/research/imputation-benchmark.json`: metric tổng hợp cho mục nghiên cứu ở `/home`; tách biệt với đường dự báo và không điền/ghi đè dữ liệu trên bản đồ quan trắc.
+- `scripts/audit_existing_papers.py`, `scripts/reproduce_tslib_benchmark.py`, `scripts/summarize_tslib_benchmark.py`, `scripts/export_imputation_dashboard.py`, `scripts/export_tslib_forecast_backtest.py`: mã audit, tái chạy huấn luyện, tổng hợp điểm và xuất dữ liệu nghiên cứu cho giao diện.
 
 Không giữ file dòng-đến-dòng đã tiền xử lý của mẫu PI-STOF; file scratch được xóa sau khi chạy, chỉ để lại số liệu tổng hợp.
 
@@ -113,13 +115,25 @@ Chạy audit và benchmark TSLib từ thư mục gốc:
 
 ```powershell
 Set-Location "C:\disk D\full_web_org"
+git submodule update --init --recursive Time-Series-Library
 python research_reproduction/scripts/audit_existing_papers.py
 python research_reproduction/scripts/reproduce_tslib_benchmark.py
 python research_reproduction/scripts/summarize_tslib_benchmark.py
 python research_reproduction/scripts/export_imputation_dashboard.py
+python research_reproduction/scripts/export_tslib_forecast_backtest.py
 ```
 
 Script tổng hợp luôn ghi `summary.csv`; nếu môi trường có Matplotlib thì sẽ tạo thêm `benchmark_summary.png`.
+
+Để tái tạo biểu đồ dự báo theo giờ mà không huấn luyện lại tám mô hình, chỉ cần nạp dependency của TSLib rồi chạy:
+
+```powershell
+Set-Location "C:\disk D\full_web_org"
+python -m pip install -r research_reproduction/requirements-tslib-inference.txt
+python research_reproduction/scripts/export_tslib_forecast_backtest.py
+```
+
+Script kiểm tra hash `BaoDinh.csv`, commit TSLib, hash từng checkpoint và tham số chuẩn hóa trước khi ghi artifact cho web. Artifact chỉ chứa dự báo của cửa sổ nghiên cứu đã duyệt; giao diện lấy quan trắc đối chiếu từ Monitoring API, gắn nhãn kết quả lịch sử và không gọi đây là dự báo thời gian thực.
 
 Để chạy lại mẫu PI-STOF trên Windows, cần cài `requirements.txt` của dự án. Lệnh dưới đây dùng file đã tiền xử lý trong thư mục tạm của hệ điều hành, xuất các bảng/figures tổng hợp vào `research_reproduction`, rồi xóa file dòng-đến-dòng trong mọi trường hợp:
 
