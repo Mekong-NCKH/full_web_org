@@ -708,7 +708,7 @@ export default function ForecastResearchPanel() {
           </section>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-6">
+            <section className="min-w-0 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-6">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.15em] text-teal-800">
                   Kiểm tra theo trạm
@@ -856,7 +856,7 @@ export default function ForecastResearchPanel() {
               )}
             </section>
 
-            <aside className="rounded-2xl border border-amber-200 bg-[#fffaf0] p-5 sm:p-6">
+            <aside className="min-w-0 rounded-2xl border border-amber-200 bg-[#fffaf0] p-5 sm:p-6">
               <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-amber-800">
                 Giới hạn cần đọc cùng kết quả
               </p>
