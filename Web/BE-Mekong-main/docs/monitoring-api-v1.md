@@ -4,6 +4,8 @@ This document describes the public V1 contract for the `positions` and `position
 
 The public station set is the current intersection of station headers in `BaoDinh.csv` and coordinates in `Sanility_GIS_Monitoring/cong_locations.csv`: `baodinh`, `gocat`, and `vamkenh`. V1 returns canonical coordinates from `cong_locations.csv`; it does not expose the legacy database coordinates for other stations. The importer now reads `BaoDinh.csv` only, per the Phase 0 Go Cat source choice. Existing database rows still have unverified provenance until the selected source is imported and reconciled.
 
+The `/home` research panel separately loads `Web/public/research/forecast-backtest.json`, a static historical TSLib prediction artifact bundled by the Vite frontend. It is not a V1 endpoint and does not provide a current forecast. To draw the chart's observed comparison line, the page requests the selected station's 24-hour interval from `GET /api/v1/stations/:id/observations`; these observations retain the same response contract and quality status described below. The reserved station forecast route continues to return 501; the static study does not change observation values or integrate an operational forecasting model.
+
 All timestamps in v1 query parameters must be ISO 8601 with `Z` or an explicit numeric offset (URL-encode `+` as `%2B`); responses are UTC. Date ranges are inclusive. Errors use NestJS's JSON HTTP exception format (`statusCode`, `message`, `error`).
 
 | Endpoint | Purpose |

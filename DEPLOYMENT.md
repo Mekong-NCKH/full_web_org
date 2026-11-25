@@ -41,6 +41,8 @@ Configure these in the Vercel project dashboards. Do not commit credentials or p
 
 The Leaflet map uses the OpenFreeMap Positron vector style and does not need an API key or frontend environment variable. Keep the visible attribution for OpenFreeMap, OpenMapTiles, and OpenStreetMap. The public tile instance is free to use without a request limit; it does not include an SLA guarantee. See [OpenFreeMap](https://openfreemap.org/) and its [Leaflet quick start](https://openfreemap.org/quick_start/).
 
+The home page's TSLib research panel also loads the static forecast-only artifact `Web/public/research/forecast-backtest.json` bundled by the frontend build. It contains historical rolling-origin predictions for the approved June–July 2024 study window. For the chart's observed series, the page reads the selected 24-hour interval from the station observations API. The research artifact is not a live forecast feed or an API response. Regenerate it with `research_reproduction/scripts/export_tslib_forecast_backtest.py` after verifying the pinned library, source, and checkpoint hashes; do not copy its values into observation storage or the map.
+
 After adding or changing environment variables, create a new deployment so both projects use the updated values. Keep Neon credentials in the Vercel backend environment only.
 
 ## CI and production deploy

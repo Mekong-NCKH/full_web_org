@@ -4,11 +4,17 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
+
+import { fetchObservationSeries } from '@/services/monitoring-api';
+import type { Observation } from '@/types/monitoring.type';
 
 type Metric = {
   n: number;
@@ -75,6 +81,51 @@ type ResearchReport = {
   useBoundary: string;
 };
 
+type ForecastBacktestSeries = {
+  stationId: string;
+  target: 'salinity' | 'water_level';
+  unit: string;
+  predictions: Record<string, number[]>;
+};
+
+type ForecastOrigin = {
+  index: number;
+  forecastStartAt: string;
+  forecastEndAt: string;
+  contextStartAt: string;
+  contextEndAt: string;
+  series: ForecastBacktestSeries[];
+};
+
+type ForecastBacktest = {
+  schemaVersion: number;
+  classification: string;
+  source: {
+    sha256: string;
+    from: string;
+    to: string;
+    timezone: string;
+    stations: string[];
+  };
+  library: {
+    name: string;
+    repository: string;
+    commit: string;
+    models: string[];
+  };
+  protocol: {
+    lookbackHours: number;
+    forecastHorizonHours: number;
+    holdoutStartAt: string;
+    originCount: number;
+    originStrideHours: number;
+    contextPolicy: string;
+    normalization: string;
+  };
+  useBoundary: string;
+  origins: ForecastOrigin[];
+};
+
 const MODEL_COLORS: Record<string, string> = {
   PatchTST: '#2878b5',
   DLinear: '#d68a25',
@@ -108,6 +159,19 @@ function formatDate(value: string): string {
   }).format(parsed);
 }
 
+function formatDateTime(value: string): string {
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return value;
+  return new Intl.DateTimeFormat('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Ho_Chi_Minh',
+  }).format(parsed);
+}
+
 export default function ForecastResearchPanel() {
   const [report, setReport] = useState<ResearchReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -115,6 +179,14 @@ export default function ForecastResearchPanel() {
   const [reloadKey, setReloadKey] = useState(0);
   const [stationId, setStationId] = useState('baodinh');
   const [target, setTarget] = useState<'salinity' | 'water_level'>('salinity');
+  const [backtest, setBacktest] = useState<ForecastBacktest | null>(null);
+  const [backtestError, setBacktestError] = useState<string | null>(null);
+  const [backtestReloadKey, setBacktestReloadKey] = useState(0);
+  const [forecastOriginIndex, setForecastOriginIndex] = useState(0);
+  const [forecastModel, setForecastModel] = useState('PatchTST');
+  const [observedSeries, setObservedSeries] = useState<Observation[]>([]);
+  const [observedLoading, setObservedLoading] = useState(false);
+  const [observedError, setObservedError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -151,6 +223,45 @@ export default function ForecastResearchPanel() {
     return () => controller.abort();
   }, [reloadKey]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+    const url = new URL(
+      `${import.meta.env.BASE_URL}research/forecast-backtest.json`,
+      window.location.origin,
+    );
+
+    setBacktestError(null);
+    fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Không tải được chuỗi dự báo (${response.status}).`);
+        }
+        return (await response.json()) as ForecastBacktest;
+      })
+      .then((result) => {
+        setBacktest(result);
+        setForecastOriginIndex(result.origins[0]?.index ?? 0);
+        setForecastModel((current) =>
+          result.library.models.includes(current)
+            ? current
+            : result.library.models[0] ?? '',
+        );
+      })
+      .catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === 'AbortError') return;
+        setBacktestError(
+          reason instanceof Error
+            ? reason.message
+            : 'Không tải được chuỗi dự báo nghiên cứu.',
+        );
+      });
+
+    return () => controller.abort();
+  }, [backtestReloadKey]);
+
   const selectedSeries = report?.series.find(
     (item) => item.stationId === stationId && item.target === target,
   );
@@ -172,6 +283,82 @@ export default function ForecastResearchPanel() {
       (left, right) => left.metric.normalizedMae - right.metric.normalizedMae,
     );
   }, [report, selectedSeries]);
+  const selectedForecastOrigin = backtest?.origins.find(
+    (origin) => origin.index === forecastOriginIndex,
+  ) ?? backtest?.origins[0];
+  const selectedForecastStartAt = selectedForecastOrigin?.forecastStartAt;
+  const selectedForecastEndAt = selectedForecastOrigin?.forecastEndAt;
+  const selectedBacktestSeries = selectedForecastOrigin?.series.find(
+    (series) => series.stationId === stationId && series.target === target,
+  );
+  const hasSelectedObservedValues = observedSeries.some((observation) =>
+    typeof (target === 'salinity'
+      ? observation.salinity.value
+      : observation.waterLevel.value) === 'number',
+  );
+  useEffect(() => {
+    if (!selectedForecastStartAt || !selectedForecastEndAt) {
+      setObservedSeries([]);
+      setObservedLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const from = new Date(selectedForecastStartAt);
+    const to = new Date(selectedForecastEndAt);
+    setObservedLoading(true);
+    setObservedError(null);
+    setObservedSeries([]);
+    fetchObservationSeries(stationId, from, to, controller.signal)
+      .then(setObservedSeries)
+      .catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === 'AbortError') return;
+        setObservedSeries([]);
+        setObservedError(
+          reason instanceof Error
+            ? reason.message
+            : 'Không tải được quan trắc đối chiếu từ Monitoring API.',
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setObservedLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [stationId, target, selectedForecastStartAt, selectedForecastEndAt]);
+
+  const forecastLineData = useMemo(() => {
+    if (!selectedForecastOrigin || !selectedBacktestSeries) return [];
+    const selectedPredictions = selectedBacktestSeries.predictions[forecastModel];
+    const observationsByTime = new Map(
+      observedSeries.map((observation) => [
+        new Date(observation.observedAt).getTime(), observation,
+      ]),
+    );
+    return (selectedPredictions ?? []).map((prediction, index) => {
+      const timestamp = new Date(
+        Date.parse(selectedForecastOrigin.forecastStartAt) + index * 60 * 60 * 1000,
+      );
+      const observation = observationsByTime.get(timestamp.getTime());
+      const actual = observation
+        ? target === 'salinity'
+          ? observation.salinity.value
+          : observation.waterLevel.value
+        : null;
+      return {
+        timestamp,
+        timeLabel: new Intl.DateTimeFormat('vi-VN', {
+          day: '2-digit',
+          month: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'Asia/Ho_Chi_Minh',
+        }).format(timestamp),
+        actual,
+        prediction,
+      };
+    });
+  }, [forecastModel, observedSeries, selectedBacktestSeries, selectedForecastOrigin, target]);
 
   return (
     <section id="forecast-research" className="mt-10 scroll-mt-24">
@@ -188,8 +375,8 @@ export default function ForecastResearchPanel() {
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
               So sánh bốn mô hình Time-Series-Library với các mốc dự báo đơn giản
-              trên sáu chuỗi quan trắc. Bài báo tải về phân tích riêng cả dự báo
-              lẫn nội suy và giải thích cách chọn ba mô hình nghiên cứu.
+              trên sáu chuỗi quan trắc. Có thể xem dự báo theo giờ trên holdout
+              lịch sử, rồi đối chiếu với số đo đã lưu qua Monitoring API.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <a
@@ -320,6 +507,204 @@ export default function ForecastResearchPanel() {
                 </article>
               ))}
             </div>
+          </section>
+
+          <section
+            aria-labelledby="forecast-backtest-title"
+            className="mt-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_8px_28px_rgba(15,23,42,0.04)] sm:p-6"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.15em] text-teal-800">
+                  Đường dự báo theo giờ
+                </p>
+                <h3
+                  id="forecast-backtest-title"
+                  className="mt-1 text-xl font-semibold tracking-tight text-slate-900"
+                >
+                  Đối chiếu dự báo với quan trắc thật
+                </h3>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+                  Chọn một mốc trong holdout và xem 24 giá trị mà mô hình dự báo
+                  trước khi so với quan trắc.
+                </p>
+              </div>
+              <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-900">
+                Backtest lịch sử · không phải dự báo trực tiếp
+              </span>
+            </div>
+
+            {backtestError && (
+              <div
+                className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+                role="alert"
+              >
+                <span>{backtestError}</span>
+                <button
+                  type="button"
+                  onClick={() => setBacktestReloadKey((value) => value + 1)}
+                  className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 font-semibold hover:bg-rose-100"
+                >
+                  Tải lại chuỗi dự báo
+                </button>
+              </div>
+            )}
+
+            {!backtest && !backtestError && (
+              <div className="mt-4 rounded-xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500" role="status">
+                Đang tải chuỗi dự báo theo giờ…
+              </div>
+            )}
+
+            {backtest && selectedForecastOrigin && selectedBacktestSeries && (
+              <>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className="text-xs font-semibold text-slate-600">
+                    Mốc dự báo
+                    <select
+                      value={selectedForecastOrigin.index}
+                      onChange={(event) => setForecastOriginIndex(Number(event.target.value))}
+                      className="mt-1.5 block w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 focus:border-teal-700 focus:ring-teal-700"
+                    >
+                      {backtest.origins.map((origin) => (
+                        <option key={origin.index} value={origin.index}>
+                          {formatDateTime(origin.forecastStartAt)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-slate-600">
+                    Mô hình TSLib
+                    <select
+                      value={forecastModel}
+                      onChange={(event) => setForecastModel(event.target.value)}
+                      className="mt-1.5 block w-full rounded-xl border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 focus:border-teal-700 focus:ring-teal-700"
+                    >
+                      {backtest.library.models.map((name) => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#f1f6f5] px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {report?.series.find(
+                        (item) => item.stationId === stationId && item.target === target,
+                      )?.stationLabel ?? stationId}{' '}
+                      · {target === 'salinity' ? 'Độ mặn' : 'Mực nước'} · {forecastModel}
+                    </p>
+                    <p className="mt-0.5 text-[11px] leading-5 text-slate-500">
+                      Ngữ cảnh:{' '}
+                      {formatDateTime(selectedForecastOrigin.contextStartAt)} –{' '}
+                      {formatDateTime(selectedForecastOrigin.contextEndAt)} · dự báo:{' '}
+                      {formatDateTime(selectedForecastOrigin.forecastStartAt)} –{' '}
+                      {formatDateTime(selectedForecastOrigin.forecastEndAt)}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-teal-900">
+                    {backtest.protocol.lookbackHours} giờ vào ·{' '}
+                    {backtest.protocol.forecastHorizonHours} giờ ra
+                  </span>
+                </div>
+
+                {observedLoading && (
+                  <p className="mt-3 text-xs text-slate-500" role="status">
+                    Đang tải quan trắc đối chiếu từ Monitoring API…
+                  </p>
+                )}
+                {observedError && (
+                  <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900" role="alert">
+                    Quan trắc chưa tải được từ Monitoring API: {observedError}
+                  </p>
+                )}
+                {!observedLoading && !observedError && observedSeries.length === 0 && (
+                  <p className="mt-3 text-xs text-slate-500" role="status">
+                    API không có quan trắc trong mốc thời gian đã chọn.
+                  </p>
+                )}
+
+                <div
+                  className="mt-4 h-[320px] w-full"
+                  role="img"
+                  aria-label={`${hasSelectedObservedValues ? 'Quan trắc thật và ' : ''}dự báo ${forecastModel} cho ${stationId}, ${target}`}
+                >
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={280}>
+                    <LineChart
+                      data={forecastLineData}
+                      margin={{ top: 8, right: 18, bottom: 4, left: 2 }}
+                    >
+                      <CartesianGrid stroke="#e8eef0" vertical={false} strokeDasharray="3 4" />
+                      <XAxis
+                        dataKey="timeLabel"
+                        interval={3}
+                        tick={{ fill: '#64748b', fontSize: 10 }}
+                        tickLine={false}
+                        axisLine={{ stroke: '#cbd5e1' }}
+                      />
+                      <YAxis
+                        domain={['auto', 'auto']}
+                        width={68}
+                        tick={{ fill: '#64748b', fontSize: 10 }}
+                        tickFormatter={(value: number) => value.toLocaleString('vi-VN', { maximumFractionDigits: 2 })}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        labelFormatter={(_, payload) => {
+                          const point = payload?.[0]?.payload as { timestamp?: Date } | undefined;
+                          return point?.timestamp ? formatDateTime(point.timestamp.toISOString()) : '';
+                        }}
+                        formatter={(value, name) => [
+                          typeof value === 'number'
+                            ? `${value.toLocaleString('vi-VN', { maximumFractionDigits: 3 })} ${selectedBacktestSeries.unit}`
+                            : value,
+                          name,
+                        ]}
+                        contentStyle={{ borderRadius: 12, borderColor: '#dbe5e7' }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      {hasSelectedObservedValues && (
+                        <Line
+                          type="monotone"
+                          dataKey="actual"
+                          name="Quan trắc thật"
+                          stroke="#0d3542"
+                          strokeWidth={2.5}
+                          dot={false}
+                          activeDot={{ r: 4 }}
+                        />
+                      )}
+                      <Line
+                        type="monotone"
+                        dataKey="prediction"
+                        name={forecastModel}
+                        stroke={MODEL_COLORS[forecastModel] ?? '#2878b5'}
+                        strokeWidth={2}
+                        strokeDasharray="6 4"
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="mt-2 text-xs leading-5 text-slate-500">
+                  Dự báo được tạo từ dữ liệu BaoDinh.csv trong cửa sổ{' '}
+                  {formatDate(backtest.source.from)} – {formatDate(backtest.source.to)}.
+                  Quan trắc đối chiếu được đọc từ Monitoring API. Sau mỗi khối 24
+                  giờ, quan trắc của khối đó được đưa vào ngữ cảnh cho mốc kế tiếp.
+                  Kết quả chỉ phản ánh backtest lịch sử; không phải dự báo cập nhật
+                  theo dữ liệu mới.
+                </p>
+              </>
+            )}
+
+            {backtest && (!selectedForecastOrigin || !selectedBacktestSeries) && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
+                Artifact hiện không có chuỗi cho trạm và chỉ tiêu đã chọn.
+              </div>
+            )}
           </section>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
